@@ -11,59 +11,21 @@ import (
 	"time"
 )
 
-type tokenservice struct{}
+type TokenManager struct{}
 
-func NewToken() *tokenservice {
-	return &tokenservice{}
+func NewTokenService() *TokenManager {
+	return &TokenManager{}
 }
 
 type TokenInterface interface {
-	//CreateToken(userId string) (*TokenDetails, error)
 	CreateToken(userId, userName string) (*TokenDetails, error)
 	ExtractTokenMetadata(*http.Request) (*AccessDetails, error)
 }
 
 //Token implements the TokenInterface
-var _ TokenInterface = &tokenservice{}
+var _ TokenInterface = &TokenManager{}
 
-//func (t *tokenservice) CreateToken(userId string) (*TokenDetails, error) {
-//	td := &TokenDetails{}
-//	td.AtExpires = time.Now().Add(time.Minute * 30).Unix() //expires after 30 min
-//	td.TokenUuid = uuid.NewV4().String()
-//
-//	td.RtExpires = time.Now().Add(time.Hour * 24 * 7).Unix()
-//	td.RefreshUuid = td.TokenUuid + "++" + userId
-//
-//	var err error
-//	//Creating Access Token
-//	atClaims := jwt.MapClaims{}
-//	atClaims["access_uuid"] = td.TokenUuid
-//	atClaims["user_id"] = userId
-//	atClaims["exp"] = td.AtExpires
-//	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-//	td.AccessToken, err = at.SignedString([]byte(os.Getenv("ACCESS_SECRET")))
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	//Creating Refresh Token
-//	td.RtExpires = time.Now().Add(time.Hour * 24 * 7).Unix()
-//	td.RefreshUuid = td.TokenUuid + "++" + userId
-//
-//	rtClaims := jwt.MapClaims{}
-//	rtClaims["refresh_uuid"] = td.RefreshUuid
-//	rtClaims["user_id"] = userId
-//	rtClaims["exp"] = td.RtExpires
-//	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
-//
-//	td.RefreshToken, err = rt.SignedString([]byte(os.Getenv("REFRESH_SECRET")))
-//	if err != nil {
-//		return nil, err
-//	}
-//	return td, nil
-//}
-
-func (t *tokenservice) CreateToken(userId, userName string) (*TokenDetails, error) {
+func (t *TokenManager) CreateToken(userId, userName string) (*TokenDetails, error) {
 	td := &TokenDetails{}
 	td.AtExpires = time.Now().Add(time.Minute * 30).Unix() //expires after 30 min
 	td.TokenUuid = uuid.NewV4().String()
@@ -101,6 +63,17 @@ func (t *tokenservice) CreateToken(userId, userName string) (*TokenDetails, erro
 	}
 	return td, nil
 }
+func (t *TokenManager) ExtractTokenMetadata(r *http.Request) (*AccessDetails, error) {
+	token, err := VerifyToken(r)
+	if err != nil {
+		return nil, err
+	}
+	acc, err := Extract(token)
+	if err != nil {
+		return nil, err
+	}
+	return acc, nil
+}
 
 func TokenValid(r *http.Request) error {
 	token, err := VerifyToken(r)
@@ -137,7 +110,7 @@ func ExtractToken(r *http.Request) string {
 	return ""
 }
 
-func extract(token *jwt.Token) (*AccessDetails, error) {
+func Extract(token *jwt.Token) (*AccessDetails, error) {
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
@@ -157,12 +130,12 @@ func extract(token *jwt.Token) (*AccessDetails, error) {
 	return nil, errors.New("something went wrong")
 }
 
-func (t *tokenservice) ExtractTokenMetadata(r *http.Request) (*AccessDetails, error) {
+func ExtractTokenMetadata(r *http.Request) (*AccessDetails, error) {
 	token, err := VerifyToken(r)
 	if err != nil {
 		return nil, err
 	}
-	acc, err := extract(token)
+	acc, err := Extract(token)
 	if err != nil {
 		return nil, err
 	}

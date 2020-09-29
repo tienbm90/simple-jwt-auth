@@ -1,4 +1,4 @@
-package core
+package servers
 
 import (
 	"fmt"
@@ -16,19 +16,26 @@ type Server struct {
 	Router      *gin.Engine
 	FileAdapter *fileadapter.Adapter
 	RedisCli    *redis.Client
-	rd          auth.AuthInterface
-	tk          auth.TokenInterface
+	RD          auth.AuthInterface
+	TK          auth.TokenInterface
 }
 
-var server Server
+//type AuthHandler struct {
+//	rd auth.AuthInterface
+//	tk auth.TokenInterface
+//}
+
+var HttpServer Server
+
+//var JwtAuthHandler AuthHandler
 
 func (server *Server) Initialize(redis_host, redis_port, redis_password string) {
 	server.Router = gin.Default()
 	server.RedisCli = NewRedisDB(redis_host, redis_port, redis_password)
 	server.FileAdapter = fileadapter.NewAdapter("config/basic_policy.csv")
 	//init route
-	server.rd = auth.NewAuthService(server.RedisCli)
-	server.tk = auth.NewTokenService()
+	server.RD = auth.NewAuthService(server.RedisCli)
+	//server.tk = auth.NewTokenService()
 	server.InitializeRoutes()
 }
 
@@ -47,7 +54,7 @@ func (server *Server) Run(addr string) {
 }
 
 func Run() {
-	var server = Server{}
+	HttpServer = Server{}
 	var err error
 	err = godotenv.Load()
 	if err != nil {
@@ -57,15 +64,14 @@ func Run() {
 	}
 
 	appAddr := ":" + os.Getenv("PORT")
-
 	//redis details
 	redis_host := os.Getenv("REDIS_HOST")
 	redis_port := os.Getenv("REDIS_PORT")
 	redis_password := os.Getenv("REDIS_PASSWORD")
 
-	server.Initialize(redis_host, redis_port, redis_password)
+	HttpServer.Initialize(redis_host, redis_port, redis_password)
 
-	server.Run(":" + appAddr)
+	HttpServer.Run(appAddr)
 
 }
 
@@ -75,7 +81,6 @@ func (server *Server) Close() {
 		if err := server.RedisCli.Close(); err != nil {
 			log.Fatal(err)
 		}
-
 		server.RedisCli = nil
 	}
 }

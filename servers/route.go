@@ -1,4 +1,4 @@
-package core
+package servers
 
 import (
 	"github.com/gin-gonic/gin"
@@ -9,7 +9,7 @@ import (
 
 func (s *Server) InitializeRoutes() {
 
-	s.Router.POST("/login", )
+	s.Router.POST("/login", api.Login)
 
 	authorized := s.Router.Group("/")
 	authorized.Use(gin.Logger())
@@ -18,8 +18,10 @@ func (s *Server) InitializeRoutes() {
 	{
 		authorized.POST("/api/todo",  middleware.Authorize("resource", "write", s.FileAdapter), api.CreateTodo)
 		authorized.GET("/api/todo", middleware.Authorize("resource", "read", s.FileAdapter), api.GetTodo)
-		//authorized.POST("/logout", api.Logout)
-		//authorized.POST("/refresh", api.Refresh)
+		authorized.POST("/logout", api.Logout)
+		authorized.POST("/refresh", api.Refresh)
 	}
 
 }
+
+
