@@ -13,9 +13,9 @@ import (
 
 type TokenManager struct{}
 
-func NewTokenService() *TokenManager {
-	return &TokenManager{}
-}
+//func NewTokenService() *TokenManager {
+//	return &TokenManager{}
+//}
 
 type TokenInterface interface {
 	CreateToken(userId, userName string) (*TokenDetails, error)

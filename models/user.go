@@ -10,11 +10,6 @@ type User struct {
 	Password string `json:"password"`
 }
 
-type Todo struct {
-	UserID string `json:"user_id"`
-	Title  string `json:"title"`
-	Body   string `json:"body"`
-}
 
 // SetPassword sets a new password stored as hash.
 func (m *User) SetPassword(password string) error {

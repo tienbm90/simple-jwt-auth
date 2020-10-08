@@ -20,7 +20,7 @@ func Login(c *gin.Context) {
 		return
 	}
 	//find user with username
-	user, err := models.UserRepo.FindByID(1)
+	user, err := models.UserRepo.FindByID(3)
 	//compare the user from the request, with the one we defined:
 	if user.UserName != u.UserName || user.Password != u.Password {
 		c.JSON(http.StatusUnauthorized, "Please provide valid login details")

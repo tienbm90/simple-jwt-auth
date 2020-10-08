@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/simple-jwt-auth/api"
 	"github.com/simple-jwt-auth/middleware"
-
 )
 
 func (s *Server) InitializeRoutes() {
@@ -16,12 +15,10 @@ func (s *Server) InitializeRoutes() {
 	authorized.Use(gin.Recovery())
 	authorized.Use(middleware.TokenAuthMiddleware())
 	{
-		authorized.POST("/api/todo",  middleware.Authorize("resource", "write", s.FileAdapter), api.CreateTodo)
-		authorized.GET("/api/todo", middleware.Authorize("resource", "read", s.FileAdapter), api.GetTodo)
+		authorized.POST("/api/todo", middleware.Authorize("resource", "write", s.Enforcer), api.CreateTodo)
+		authorized.GET("/api/todo", middleware.Authorize("resource", "read", s.Enforcer), api.GetTodo)
 		authorized.POST("/logout", api.Logout)
 		authorized.POST("/refresh", api.Refresh)
 	}
 
 }
-
-

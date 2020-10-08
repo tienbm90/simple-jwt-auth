@@ -2,77 +2,41 @@ package servers
 
 import (
 	"fmt"
-	"github.com/casbin/casbin/persist/file-adapter"
+	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v7"
-	"github.com/joho/godotenv"
 	"github.com/simple-jwt-auth/auth"
+	"github.com/simple-jwt-auth/models"
+	"github.com/simple-jwt-auth/utils"
 	"log"
 	"net/http"
-	"os"
 )
 
 type Server struct {
-	Router      *gin.Engine
-	FileAdapter *fileadapter.Adapter
-	RedisCli    *redis.Client
-	RD          auth.AuthInterface
-	TK          auth.TokenInterface
+	Router     *gin.Engine
+	Enforcer   *casbin.Enforcer
+	RedisCli   *redis.Client
+	RD         auth.AuthInterface
+	TK         auth.TokenInterface
+	enviroment models.Enviroment
 }
 
-//type AuthHandler struct {
-//	rd auth.AuthInterface
-//	tk auth.TokenInterface
-//}
-
-var HttpServer Server
-
-//var JwtAuthHandler AuthHandler
-
-func (server *Server) Initialize(redis_host, redis_port, redis_password string) {
+func (server *Server) Initialize(env models.Enviroment) {
+	server.enviroment = env
 	server.Router = gin.Default()
-	server.RedisCli = NewRedisDB(redis_host, redis_port, redis_password)
-	server.FileAdapter = fileadapter.NewAdapter("config/basic_policy.csv")
+	server.RedisCli = utils.NewRedisDB(server.enviroment.RedisConfig.Host, server.enviroment.RedisConfig.Port, server.enviroment.RedisConfig.Password)
+	dataSource := fmt.Sprintf("%s:%s@tcp(%s)/", server.enviroment.SqlConfig.Username, server.enviroment.SqlConfig.Passord, server.enviroment.SqlConfig.Url)
+	server.Enforcer = auth.NewCasbinEnforcer(dataSource)
+
 	//init route
 	server.RD = auth.NewAuthService(server.RedisCli)
-	//server.tk = auth.NewTokenService()
 	server.InitializeRoutes()
 }
 
-func NewRedisDB(host, port, password string) *redis.Client {
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     host + ":" + port,
-		Password: password,
-		DB:       0,
-	})
-	return redisClient
-}
-
-func (server *Server) Run(addr string) {
-	fmt.Printf("Listen on port %s \n", addr)
-	log.Fatal(http.ListenAndServe(addr, server.Router))
-}
-
-func Run() {
-	HttpServer = Server{}
-	var err error
-	err = godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error getting env, not comming through %v", err)
-	} else {
-		fmt.Println("We are getting the env values")
-	}
-
-	appAddr := ":" + os.Getenv("PORT")
-	//redis details
-	redis_host := os.Getenv("REDIS_HOST")
-	redis_port := os.Getenv("REDIS_PORT")
-	redis_password := os.Getenv("REDIS_PASSWORD")
-
-	HttpServer.Initialize(redis_host, redis_port, redis_password)
-
-	HttpServer.Run(appAddr)
-
+func (server *Server) Run() {
+	fmt.Printf("Listen on port %s \n", server.enviroment.Port)
+	//log.Fatal(http.ListenAndServe(server.enviroment.Port, server.Router))
+	log.Fatal(http.ListenAndServe(":8081", server.Router))
 }
 
 func (server *Server) Close() {
