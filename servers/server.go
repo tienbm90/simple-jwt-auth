@@ -26,6 +26,7 @@ func (server *Server) Initialize(env models.Enviroment) {
 	server.Router = gin.Default()
 	server.RedisCli = utils.NewRedisDB(server.enviroment.RedisConfig.Host, server.enviroment.RedisConfig.Port, server.enviroment.RedisConfig.Password)
 	dataSource := fmt.Sprintf("%s:%s@tcp(%s)/", server.enviroment.SqlConfig.Username, server.enviroment.SqlConfig.Passord, server.enviroment.SqlConfig.Url)
+
 	server.Enforcer = auth.NewCasbinEnforcer(dataSource)
 
 	//init route
