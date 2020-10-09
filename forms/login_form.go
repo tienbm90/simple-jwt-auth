@@ -1,4 +1,4 @@
-package form
+package forms
 
 type Login struct {
 	UserName string `json: "UserName"`

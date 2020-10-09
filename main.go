@@ -50,9 +50,7 @@ func Run() {
 	AuthServer = servers.Server{}
 
 	env := LoadEnv()
-
 	AuthServer.Initialize(env)
-
 	AuthServer.Run()
-
+	//AuthServer.CheckEnforcer(env)
 }

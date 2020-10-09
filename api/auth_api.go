@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/simple-jwt-auth/auth"
 	"github.com/simple-jwt-auth/models"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -19,13 +20,15 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, "Invalid json provided")
 		return
 	}
-	//find user with username
-	user, err := models.UserRepo.FindByID(3)
-	//compare the user from the request, with the one we defined:
-	if user.UserName != u.UserName || user.Password != u.Password {
+
+	user, err:= models.UserRepo.Validate(u)
+
+	if err !=nil {
 		c.JSON(http.StatusUnauthorized, "Please provide valid login details")
 		return
 	}
+	log.Println(user)
+
 	ts, err := tokenManager.CreateToken(user.ID, user.UserName)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, err.Error())
@@ -110,7 +113,7 @@ func Refresh(c *gin.Context) {
 		}
 		user, err := models.UserRepo.FindByID(userID)
 		if err != nil {
-			c.JSON(http.StatusUnprocessableEntity, "User's not found ")
+			c.JSON(http.StatusUnprocessableEntity, "Subject's not found ")
 		}
 
 		ts, createErr := tokenManager.CreateToken(userId, user.UserName)

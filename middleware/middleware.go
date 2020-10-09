@@ -35,6 +35,7 @@ func Authorize(obj string, act string, enforcer *casbin.Enforcer) gin.HandlerFun
 			return
 		}
 		// casbin enforces policy
+		log.Printf("Meta: %s:%s:%s", metadata.UserName, obj, act)
 		ok, err := enforce(metadata.UserName, obj, act, enforcer)
 		//ok, err := enforce(val.(string), obj, act, adapter)
 		if err != nil {

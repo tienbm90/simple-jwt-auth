@@ -15,6 +15,15 @@ var us = []User{
 		ID:       "3",
 		UserName: "username",
 		Password: "password",
+	}, {
+		ID:       "1",
+		UserName: "admin",
+		Password: "password",
+	},
+	{
+		ID:       "4",
+		UserName: "alice",
+		Password: "password",
 	},
 }
 var UserRepo = UserRepository{
@@ -39,6 +48,19 @@ func (r *UserRepository) FindByID(id int) (User, error) {
 		if uid == int(id) {
 			return v, nil
 		}
+	}
+
+	return User{}, errors.New("Not found")
+}
+
+func (r *UserRepository) Validate(user User) (User, error) {
+
+	for _, v := range r.Users {
+
+		if v.UserName == user.UserName && v.Password == user.Password {
+			return v, nil
+		}
+
 	}
 
 	return User{}, errors.New("Not found")

@@ -2,7 +2,7 @@ package models
 
 
 type UserRole struct {
-	User string `json:"user" form:"user" query:"user"`
-	Role string `json:"role" form:"role" query:"role"`
+	User string `json:"user" forms:"user" query:"user"`
+	Role string `json:"role" forms:"role" query:"role"`
 }
 
