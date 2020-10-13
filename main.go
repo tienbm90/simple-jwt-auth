@@ -25,23 +25,43 @@ func LoadEnv() models.Enviroment {
 	} else {
 		fmt.Println("We are getting the env values")
 	}
-	redis_host := os.Getenv("REDIS_HOST")
-	redis_port := os.Getenv("REDIS_PORT")
-	redis_password := os.Getenv("REDIS_PASSWORD")
-	redis_username := os.Getenv("REDIS_USERNAME")
-	redis := models.RedisConf{redis_host, redis_port, redis_username, redis_password}
-	sql_username := os.Getenv("SQL_USERNAME")
-	sql_password := os.Getenv("SQL_PASSWORD")
-	sql_url := os.Getenv("SQL_URL")
-	sql := models.SqlConf{sql_username, sql_password, sql_url}
+	redisHost := os.Getenv("REDIS_HOST")
+	redisPort := os.Getenv("REDIS_PORT")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisUsername := os.Getenv("REDIS_USERNAME")
+	var redis = models.RedisConf{Host: redisHost, Port: redisPort, Username: redisUsername, Password: redisPassword}
+	dbDriver := os.Getenv("DB_DRIVER")
+	dbUsername := os.Getenv("DB_USERNAME")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbDatabase := os.Getenv("DB_DATABASE")
+	sqlConf := models.SqlConf{Driver: dbDriver, Username: dbUsername, Passord: dbPassword, Host: dbHost, Port: dbPort, Database: dbDatabase}
 
+	clientId := os.Getenv("GOOGLE_CLIENT_ID")
+	projectId := os.Getenv("GOOGLE_PROJECT_ID")
+	authUri := os.Getenv("GOOGLE_AUTH_URI")
+	tokenUri := os.Getenv("GOOGLE_TOKEN_URI")
+	certUri := os.Getenv("GOOGLE_AUTH_PROVIDER_X509_CERT_URL")
+	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	redirectUrl := os.Getenv("GOOGLE_REDIRECT_URL")
+	gConf := models.Google{
+		ClientID:                clientId,
+		ProjectID:               projectId,
+		AuthUri:                 authUri,
+		TokenUri:                tokenUri,
+		AuthProviderX509CertUri: certUri,
+		ClientSecret:            clientSecret,
+		RedirectUrl:             redirectUrl,
+	}
 	port := os.Getenv("APP_PORT")
 
-	watcher_enable, err := strconv.ParseBool(os.Getenv("CASBIN_WATCHER_ENABLE"))
+	watcherEnable, err := strconv.ParseBool(os.Getenv("CASBIN_WATCHER_ENABLE"))
+
 	if err != nil {
 		log.Fatal(fmt.Sprintf("Can't parse enviroment: %s", err.Error()))
 	}
-	env := models.Enviroment{redis, sql, port, watcher_enable}
+	env := models.Enviroment{RedisConfig: redis, SqlConfig: sqlConf, Port: port, CasbinWatcherEnable: watcherEnable, GoogleConf: gConf}
 	return env
 }
 

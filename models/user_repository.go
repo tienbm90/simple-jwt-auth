@@ -2,93 +2,73 @@ package models
 
 import (
 	"errors"
+	"gorm.io/gorm"
 	"log"
-	"strconv"
 )
 
-var us = []User{
-	{
-		ID:       "2",
-		UserName: "users",
-		Password: "pass",
-	}, {
-		ID:       "3",
-		UserName: "username",
-		Password: "password",
-	}, {
-		ID:       "1",
-		UserName: "admin",
-		Password: "password",
-	},
-	{
-		ID:       "4",
-		UserName: "alice",
-		Password: "password",
-	},
-}
-var UserRepo = UserRepository{
-	Users: us,
+type UserRepository struct {
+	DB *gorm.DB
 }
 
-type UserRepository struct {
-	Users []User
+func ProvideUserRepository(DB *gorm.DB) UserRepository {
+	return UserRepository{DB: DB}
 }
 
 func (r *UserRepository) FindAll() ([]User, error) {
-	return r.Users, nil
+	var users []User
+	err := r.DB.Debug().Model(&User{}).Scan(&users).Error
+
+	return users, err
 }
 
 func (r *UserRepository) FindByID(id int) (User, error) {
-
-	for _, v := range r.Users {
-		uid, err := strconv.Atoi(v.ID)
-		if err != nil {
-			return User{}, err
-		}
-		if uid == int(id) {
-			return v, nil
-		}
-	}
-
-	return User{}, errors.New("Not found")
+	var user User
+	err := r.DB.Debug().Model(&User{}).First(&user, id).Error
+	return user, err
 }
 
 func (r *UserRepository) Validate(user User) (User, error) {
+	var us []User
+	//res := r.DB.Debug().Model(&User{}).Where("email = ?", user.Email).Scan(&us)
+	err := r.DB.Debug().Model(&User{}).Scan(&us).Error
 
-	for _, v := range r.Users {
-
-		if v.UserName == user.UserName && v.Password == user.Password {
-			return v, nil
-		}
-
+	u := us[0]
+	if err != nil {
+		return User{}, err
 	}
 
-	return User{}, errors.New("Not found")
+	if u.UserName == user.UserName && u.Password == user.Password {
+		return u, nil
+	}
+
+	return User{}, err
 }
 
-func (r *UserRepository) Save(user User) (User, error) {
-	r.Users = append(r.Users, user)
-
-	return user, nil
-}
-
-func (r *UserRepository) Delete(user User) {
-	id := -1
-	for i, v := range r.Users {
-		if v.ID == user.ID {
-			id = i
-			break
+func (r *UserRepository) FindByEmail(email string) (User, error) {
+	var user User
+	err := r.DB.Debug().Model(&User{}).Where("email = ?", email).Take(&user).Error
+	if err != nil {
+		log.Fatal(err.Error())
+		return user, err
+	} else {
+		if user == (User{}) {
+			return user, errors.New("Not found")
 		}
 	}
+	return user, err
+}
 
-	if id == -1 {
-		log.Fatal("Not found user ")
-		return
-	}
+func (r *UserRepository) Create(user User) (User, error) {
+	res := r.DB.Debug().Model(&User{}).Create(&user)
+	return user, res.Error
+}
 
-	r.Users[id] = r.Users[len(r.Users)-1] // Copy last element to index i.
-	r.Users[len(r.Users)-1] = User{}      // Erase last element (write zero value).
-	r.Users = r.Users[:len(r.Users)-1]    // Truncate slice.
+func (r *UserRepository) Update(user User) (User, error) {
+	res := r.DB.Debug().Model(&User{}).Updates(user)
+	return user, res.Error
+}
 
-	return
+func (r *UserRepository) Delete(user User) (User, error) {
+	res := r.DB.Delete(&user)
+	return user, res.Error
 }

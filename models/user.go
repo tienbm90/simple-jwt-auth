@@ -2,14 +2,23 @@ package models
 
 import (
 	"fmt"
+	"gorm.io/gorm"
 )
 
 type User struct {
-	ID       string `json:"id"`
-	UserName string `json:"username"`
-	Password string `json:"password"`
+	gorm.Model
+	UserName      string `json:"username"`
+	Password      string `json:"password"`
+	Sub           string `json:"sub"`
+	Name          string `json:"name"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Profile       string `json:"profile"`
+	Picture       string `json:"picture"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	Gender        string `json:"gender"`
 }
-
 
 // SetPassword sets a new password stored as hash.
 func (m *User) SetPassword(password string) error {

@@ -11,21 +11,17 @@ import (
 	"time"
 )
 
-type TokenManager struct{}
+type JwtTokenManager struct{}
 
-//func NewTokenService() *TokenManager {
-//	return &TokenManager{}
-//}
-
-type TokenInterface interface {
+type JwtTokenInterface interface {
 	CreateToken(userId, userName string) (*TokenDetails, error)
 	ExtractTokenMetadata(*http.Request) (*AccessDetails, error)
 }
 
-//Token implements the TokenInterface
-var _ TokenInterface = &TokenManager{}
+//Token implements the JwtTokenInterface
+var _ JwtTokenInterface = &JwtTokenManager{}
 
-func (t *TokenManager) CreateToken(userId, userName string) (*TokenDetails, error) {
+func (t *JwtTokenManager) CreateToken(userId, userName string) (*TokenDetails, error) {
 	td := &TokenDetails{}
 	td.AtExpires = time.Now().Add(time.Minute * 30).Unix() //expires after 30 min
 	td.TokenUuid = uuid.NewV4().String()
@@ -63,7 +59,7 @@ func (t *TokenManager) CreateToken(userId, userName string) (*TokenDetails, erro
 	}
 	return td, nil
 }
-func (t *TokenManager) ExtractTokenMetadata(r *http.Request) (*AccessDetails, error) {
+func (t *JwtTokenManager) ExtractTokenMetadata(r *http.Request) (*AccessDetails, error) {
 	token, err := VerifyToken(r)
 	if err != nil {
 		return nil, err

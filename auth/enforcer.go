@@ -2,12 +2,10 @@ package auth
 
 import (
 	"fmt"
-	"github.com/billcobbler/casbin-redis-watcher"
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
-	persist2 "github.com/casbin/casbin/v2/persist"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
-	"github.com/simple-jwt-auth/models"
+	"gorm.io/gorm"
 	"log"
 )
 
@@ -17,21 +15,6 @@ func NewCasbinEnforcer(connStr string) *casbin.Enforcer {
 	if err != nil {
 		log.Fatal(fmt.Sprintf("Sqlerror: %s", err.Error()))
 	}
-
-	//rbac_model := `
-	//
-	//[request_definition]
-	//r = sub, obj, act
-	//
-	//[policy_definition]
-	//p = sub, obj, act
-	//
-	//[policy_effect]
-	//e = some(where (p.eft == allow))
-	//
-	//[matchers]
-	//m = r.sub == p.sub && keyMatch(r.obj, p.obj) && regexMatch(r.act, p.act)
-	//`
 
 	rbac_model_with_resources_roles_model := `
 	[request_definition]
@@ -69,28 +52,12 @@ func NewCasbinEnforcer(connStr string) *casbin.Enforcer {
 	return enforcer
 }
 
-func NewCasbinEnforcerWithWatcher(env models.Enviroment) *casbin.Enforcer {
-	dataSource := fmt.Sprintf("%s:%s@tcp(%s)/", env.SqlConfig.Username, env.SqlConfig.Passord, env.SqlConfig.Url)
+func NewCasbinEnforcerFromDB(db *gorm.DB) *casbin.Enforcer {
 
-	adapter, err := gormadapter.NewAdapter("mysql", dataSource)
+	adapter, err := gormadapter.NewAdapterByDBUseTableName(db, "casbin", "rule")
 	if err != nil {
 		log.Fatal(fmt.Sprintf("Sqlerror: %s", err.Error()))
 	}
-
-	//rbac_model := `
-	//
-	//[request_definition]
-	//r = sub, obj, act
-	//
-	//[policy_definition]
-	//p = sub, obj, act
-	//
-	//[policy_effect]
-	//e = some(where (p.eft == allow))
-	//
-	//[matchers]
-	//m = r.sub == p.sub && keyMatch(r.obj, p.obj) && regexMatch(r.act, p.act)
-	//`
 
 	rbac_model_with_resources_roles_model := `
 	[request_definition]
@@ -115,19 +82,6 @@ func NewCasbinEnforcerWithWatcher(env models.Enviroment) *casbin.Enforcer {
 	enforcer, err := casbin.NewEnforcer(casbin_model, adapter)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("Creating enforcer error: %s", err.Error()))
-	}
-
-	if env.CasbinWatcherEnable {
-		var watcher persist2.Watcher
-		if env.RedisConfig.Username != "" && env.RedisConfig.Password != "" {
-			w, _ := rediswatcher.NewWatcher(fmt.Sprintf("redis://%s:%s@%s:%s", env.RedisConfig.Username, env.RedisConfig.Password, env.RedisConfig.Host, env.RedisConfig.Port))
-			watcher = w
-		} else {
-			w, _ := rediswatcher.NewWatcher(fmt.Sprintf("%s:%s", env.RedisConfig.Host, env.RedisConfig.Port))
-			watcher = w
-		}
-
-		enforcer.SetWatcher(watcher)
 	}
 
 	////create default policy

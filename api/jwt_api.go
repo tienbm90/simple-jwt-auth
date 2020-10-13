@@ -12,24 +12,32 @@ import (
 	"strconv"
 )
 
-var tokenManager = auth.TokenManager{}
+var tokenManager = auth.JwtTokenManager{}
 
-func Login(c *gin.Context) {
+type JwtApi struct {
+	UserRepo *models.UserRepository
+}
+
+func CreateJwtApi(repo *models.UserRepository) JwtApi {
+	return JwtApi{UserRepo: repo}
+}
+
+func (api JwtApi) JwtLogin(c *gin.Context) {
 	var u models.User
 	if err := c.ShouldBindJSON(&u); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, "Invalid json provided")
 		return
 	}
 
-	user, err:= models.UserRepo.Validate(u)
+	user, err := api.UserRepo.Validate(u)
 
-	if err !=nil {
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, "Please provide valid login details")
 		return
 	}
 	log.Println(user)
 
-	ts, err := tokenManager.CreateToken(user.ID, user.UserName)
+	ts, err := tokenManager.CreateToken(fmt.Sprintf("%s",user.ID), user.UserName)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, err.Error())
 		return
@@ -47,7 +55,7 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, tokens)
 }
 
-func Logout(c *gin.Context) {
+func (api JwtApi) JwtLogout(c *gin.Context) {
 	//If metadata is passed and the tokens valid, delete them from the redis store
 	metadata, _ := tokenManager.ExtractTokenMetadata(c.Request)
 	if metadata != nil {
@@ -60,7 +68,7 @@ func Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, "Successfully logged out")
 }
 
-func Refresh(c *gin.Context) {
+func (api JwtApi) JwtRefresh(c *gin.Context) {
 	mapToken := map[string]string{}
 	if err := c.ShouldBindJSON(&mapToken); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, err.Error())
@@ -77,7 +85,7 @@ func Refresh(c *gin.Context) {
 	})
 	//if there is an error, the token must have expired
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, "Refresh token expired")
+		c.JSON(http.StatusUnauthorized, "JwtRefresh token expired")
 		return
 	}
 	//is token valid?
@@ -98,7 +106,7 @@ func Refresh(c *gin.Context) {
 			c.JSON(http.StatusUnprocessableEntity, "unauthorized")
 			return
 		}
-		//Delete the previous Refresh Token
+		//Delete the previous JwtRefresh Token
 		//delErr := servers.HttpServer.RD.DeleteRefresh(refreshUuid)
 		//if delErr != nil { //if any goes wrong
 		//	c.JSON(http.StatusUnauthorized, "unauthorized")
@@ -111,7 +119,7 @@ func Refresh(c *gin.Context) {
 			c.JSON(http.StatusUnprocessableEntity, "userId invalid")
 			return
 		}
-		user, err := models.UserRepo.FindByID(userID)
+		user, err := api.UserRepo.FindByID(userID)
 		if err != nil {
 			c.JSON(http.StatusUnprocessableEntity, "Subject's not found ")
 		}
