@@ -41,8 +41,8 @@ func (server *Server) InitializeRoutes() {
 	}
 
 	githubConf := &oauth2.Config{
-		ClientID:     "Iv1.f2915f579568fa22",
-		ClientSecret: "93c5b51a97cefef9f46d18f459b9f34aab838a12",
+		ClientID:     "",
+		ClientSecret: "",
 		Scopes:       []string{"user:email", "repo"},
 		Endpoint:     githuboauth.Endpoint,
 	}

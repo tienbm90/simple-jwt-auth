@@ -5,7 +5,7 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v7"
-	"github.com/simple-jwt-auth/auth"
+	"github.com/simple-jwt-auth/middleware/auth"
 	"github.com/simple-jwt-auth/models"
 	"github.com/simple-jwt-auth/seed"
 	"github.com/simple-jwt-auth/utils"

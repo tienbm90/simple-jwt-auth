@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/simple-jwt-auth/auth"
+	"github.com/simple-jwt-auth/middleware/auth"
 	"github.com/simple-jwt-auth/models"
 	"log"
 	"net/http"

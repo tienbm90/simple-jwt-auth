@@ -6,7 +6,7 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/simple-jwt-auth/auth"
+	"github.com/simple-jwt-auth/middleware/auth"
 	"log"
 	"net/http"
 )

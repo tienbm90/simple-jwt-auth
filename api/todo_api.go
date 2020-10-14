@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/simple-jwt-auth/auth"
+	"github.com/simple-jwt-auth/middleware/auth"
 	"github.com/simple-jwt-auth/models"
 	"net/http"
 )
