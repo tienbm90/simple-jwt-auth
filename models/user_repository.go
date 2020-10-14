@@ -1,9 +1,7 @@
 package models
 
 import (
-	"errors"
 	"gorm.io/gorm"
-	"log"
 )
 
 type UserRepository struct {
@@ -46,15 +44,7 @@ func (r *UserRepository) Validate(user User) (User, error) {
 
 func (r *UserRepository) FindByEmail(email string) (User, error) {
 	var user User
-	err := r.DB.Debug().Model(&User{}).Where("email = ?", email).Take(&user).Error
-	if err != nil {
-		log.Fatal(err.Error())
-		return user, err
-	} else {
-		if user == (User{}) {
-			return user, errors.New("Not found")
-		}
-	}
+	err := r.DB.Debug().Model(&User{}).Where("email = ?", email).First(&user).Error
 	return user, err
 }
 

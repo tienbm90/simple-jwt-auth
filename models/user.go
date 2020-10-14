@@ -15,7 +15,7 @@ type User struct {
 	FamilyName    string `json:"family_name"`
 	Profile       string `json:"profile"`
 	Picture       string `json:"picture"`
-	Email         string `json:"email"`
+	Email         string `json:"email" gorm:"unique"`
 	EmailVerified bool   `json:"email_verified"`
 	Gender        string `json:"gender"`
 }

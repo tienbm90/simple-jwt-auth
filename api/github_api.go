@@ -13,24 +13,24 @@ import (
 	"net/http"
 )
 
-type GoogleAPI struct {
+type GithubAPI struct {
 	Config   *oauth2.Config
 	UserRepo *models.UserRepository
 }
 
-func ProvideGoogleAPI(config *oauth2.Config, repository *models.UserRepository) GoogleAPI {
+func ProvideGithubAPI(config *oauth2.Config, repository *models.UserRepository) GoogleAPI {
 	return GoogleAPI{
 		Config:   config,
 		UserRepo: repository,
 	}
 }
 
-func (g GoogleAPI) IndexHandler(c *gin.Context) {
-	c.HTML(http.StatusOK, "index.tmpl", gin.H{"link": "/oauth/google/login"})
+func (g GithubAPI) IndexHandler(c *gin.Context) {
+	c.HTML(http.StatusOK, "index.tmpl", gin.H{"link": "/oauth/github/login"})
 }
 
 // AuthHandler handles authentication of a user and initiates a session.
-func (g GoogleAPI) AuthHandler(c *gin.Context) {
+func (g GithubAPI) AuthHandler(c *gin.Context) {
 	// Handle the exchange code to initiate a transport.
 	session := sessions.Default(c)
 	retrievedState := session.Get("state")
@@ -41,7 +41,7 @@ func (g GoogleAPI) AuthHandler(c *gin.Context) {
 		return
 	}
 
-	log.Println(queryState)
+	log.Println(fmt.Sprintf("queryState: %s", queryState)	)
 
 	code := c.Request.URL.Query().Get("code")
 	tok, err := g.Config.Exchange(oauth2.NoContext, code)
@@ -52,7 +52,7 @@ func (g GoogleAPI) AuthHandler(c *gin.Context) {
 	}
 
 	client := g.Config.Client(oauth2.NoContext, tok)
-	userinfo, err := client.Get("https://www.googleapis.com/oauth2/v3/userinfo")
+	userinfo, err := client.Get("https://api.github.com/user")
 	if err != nil {
 		log.Println(err)
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -92,7 +92,7 @@ func (g GoogleAPI) AuthHandler(c *gin.Context) {
 }
 
 // LoginHandler handles the login procedure.
-func (g GoogleAPI) LoginHandler(c *gin.Context) {
+func (g GithubAPI) LoginHandler(c *gin.Context) {
 	state, err := middleware.RandToken(32)
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "error.tmpl", gin.H{"message": "Error while generating random data."})
@@ -109,11 +109,11 @@ func (g GoogleAPI) LoginHandler(c *gin.Context) {
 	}
 
 	// get login url
-	link := g.Config.AuthCodeURL(state)
+	link := g.Config.AuthCodeURL(state, oauth2.AccessTypeOnline)
 	c.HTML(http.StatusOK, "auth.tmpl", gin.H{"link": link})
 }
 
-func (g GoogleAPI) TestHandler(c *gin.Context) {
+func (g GithubAPI) TestHandler(c *gin.Context) {
 	session := sessions.Default(c)
 	userID := session.Get("user-id")
 	c.HTML(http.StatusOK, "field.tmpl", gin.H{"user": userID, "link": "/oauth/field"})
@@ -121,12 +121,12 @@ func (g GoogleAPI) TestHandler(c *gin.Context) {
 }
 
 // FieldHandler is a rudementary handler for logged in users.
-func (g GoogleAPI) FieldHandler(c *gin.Context) {
+func (g GithubAPI) FieldHandler(c *gin.Context) {
 	session := sessions.Default(c)
 	userID := session.Get("user-id")
 	c.HTML(http.StatusOK, "field.tmpl", gin.H{"user": userID})
 }
 
-func (g GoogleAPI) ApiHandler(c *gin.Context) {
+func (g GithubAPI) ApiHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, "Ok test")
 }

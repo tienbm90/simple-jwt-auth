@@ -9,6 +9,7 @@
   <body>
     {{if .seen}}
         <h1>Welcome back to the battlefield '{{ .email }}'.</h1>
+         <h1> <a href="/oauth/test">Welcome back to the battlefield '{{ .email }}'.</a></h1>
     {{else}}
         <h1>Welcome to the battlefield '{{ .email }}'.</h1>
     {{end}}
