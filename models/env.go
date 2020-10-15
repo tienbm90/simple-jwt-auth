@@ -4,6 +4,8 @@ type Enviroment struct {
 	RedisConfig         RedisConf
 	SqlConfig           SqlConf
 	GoogleConf          Google
+	FacebookConf        Facebook
+	GithubConf          Github
 	Port                string `json:"port"`
 	CasbinWatcherEnable bool   `json:"casbin_watcher_enable"`
 }
@@ -32,4 +34,16 @@ type Google struct {
 	AuthProviderX509CertUri string `json:"auth_provider_x_509_cert_uri"`
 	ClientSecret            string `json:"client_secret"`
 	RedirectUrl             string `json:"redirect_url"`
+}
+
+type Github struct {
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	RedirectUrl  string `json:"redirect_url"`
+}
+
+type Facebook struct {
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	RedirectUrl  string `json:"redirect_url"`
 }

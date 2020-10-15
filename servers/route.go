@@ -7,6 +7,7 @@ import (
 	"github.com/simple-jwt-auth/middleware"
 	"github.com/simple-jwt-auth/models"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/facebook"
 	githuboauth "golang.org/x/oauth2/github"
 	"golang.org/x/oauth2/google"
 	"log"
@@ -35,20 +36,37 @@ func (server *Server) InitializeRoutes() {
 		},
 	}
 
+	facebookConf := oauth2.Config{
+		ClientID:     server.enviroment.FacebookConf.ClientID,
+		ClientSecret: server.enviroment.FacebookConf.ClientSecret,
+		Endpoint:     facebook.Endpoint,
+		RedirectURL:  server.enviroment.FacebookConf.RedirectUrl,
+		Scopes: []string{
+			"email",
+			"public_profile",
+			//"user_link",
+			//"user_localtion",
+		},
+	}
 	googleApi := api.GoogleAPI{
 		Config:   &googleConf,
 		UserRepo: &userRepos,
 	}
 
 	githubConf := &oauth2.Config{
-		ClientID:     "",
-		ClientSecret: "",
+		ClientID:     server.enviroment.GithubConf.ClientID,
+		ClientSecret: server.enviroment.GithubConf.ClientSecret,
 		Scopes:       []string{"user:email", "repo"},
 		Endpoint:     githuboauth.Endpoint,
 	}
 
 	githubApi := api.GithubAPI{
 		Config:   githubConf,
+		UserRepo: &userRepos,
+	}
+
+	facebookApi := api.FacebookAPI{
+		Config:   &facebookConf,
 		UserRepo: &userRepos,
 	}
 	// jwt api
@@ -97,5 +115,18 @@ func (server *Server) InitializeRoutes() {
 	{
 		githubOauth.GET("/field", githubApi.FieldHandler)
 		githubOauth.GET("/test", githubApi.TestHandler)
+	}
+
+	//facebook api
+	facebookOauth := server.Router.Group("/oauth/facebook")
+	facebookOauth.Use(sessions.Sessions("goquestsession", store))
+	facebookOauth.GET("/", facebookApi.IndexHandler)
+
+	facebookOauth.GET("/login", facebookApi.LoginHandler)
+	facebookOauth.GET("/auth", facebookApi.AuthHandler)
+	facebookOauth.Use(middleware.AuthorizeOpenIdRequest())
+	{
+		facebookOauth.GET("/field", facebookApi.FieldHandler)
+		facebookOauth.GET("/test", facebookApi.TestHandler)
 	}
 }

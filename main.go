@@ -38,22 +38,43 @@ func LoadEnv() models.Enviroment {
 	dbDatabase := os.Getenv("DB_DATABASE")
 	sqlConf := models.SqlConf{Driver: dbDriver, Username: dbUsername, Passord: dbPassword, Host: dbHost, Port: dbPort, Database: dbDatabase}
 
-	clientId := os.Getenv("GOOGLE_CLIENT_ID")
-	projectId := os.Getenv("GOOGLE_PROJECT_ID")
-	authUri := os.Getenv("GOOGLE_AUTH_URI")
-	tokenUri := os.Getenv("GOOGLE_TOKEN_URI")
-	certUri := os.Getenv("GOOGLE_AUTH_PROVIDER_X509_CERT_URL")
-	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
-	redirectUrl := os.Getenv("GOOGLE_REDIRECT_URL")
+	googleClientId := os.Getenv("GOOGLE_CLIENT_ID")
+	googleProjectId := os.Getenv("GOOGLE_PROJECT_ID")
+	googleAuthUri := os.Getenv("GOOGLE_AUTH_URI")
+	googleTokenUri := os.Getenv("GOOGLE_TOKEN_URI")
+	googleCertUri := os.Getenv("GOOGLE_AUTH_PROVIDER_X509_CERT_URL")
+	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	googleRedirectUrl := os.Getenv("GOOGLE_REDIRECT_URL")
 	gConf := models.Google{
-		ClientID:                clientId,
-		ProjectID:               projectId,
-		AuthUri:                 authUri,
-		TokenUri:                tokenUri,
-		AuthProviderX509CertUri: certUri,
-		ClientSecret:            clientSecret,
-		RedirectUrl:             redirectUrl,
+		ClientID:                googleClientId,
+		ProjectID:               googleProjectId,
+		AuthUri:                 googleAuthUri,
+		TokenUri:                googleTokenUri,
+		AuthProviderX509CertUri: googleCertUri,
+		ClientSecret:            googleClientSecret,
+		RedirectUrl:             googleRedirectUrl,
 	}
+
+	githubClientId := os.Getenv("GITHUB_CLIENT_ID")
+	githubClientSecret := os.Getenv("GITHUB_CLIENT_SECRET")
+	githubRedirectUrl := os.Getenv("GITHUB_REDIRECT_URL")
+
+	githubConf := models.Github{
+		ClientID:     githubClientId,
+		ClientSecret: githubClientSecret,
+		RedirectUrl:  githubRedirectUrl,
+	}
+
+	facebookClientId := os.Getenv("FACEBOOK_CLIENT_ID")
+	facebookClientSecret := os.Getenv("FACEBOOK_CLIENT_SECRET")
+	facebookRedirecUrl := os.Getenv("FACEBOOK_REDIRECT_URL")
+
+	facebookConf := models.Facebook{
+		ClientID:     facebookClientId,
+		ClientSecret: facebookClientSecret,
+		RedirectUrl:  facebookRedirecUrl,
+	}
+
 	port := os.Getenv("APP_PORT")
 
 	watcherEnable, err := strconv.ParseBool(os.Getenv("CASBIN_WATCHER_ENABLE"))
@@ -61,7 +82,14 @@ func LoadEnv() models.Enviroment {
 	if err != nil {
 		log.Fatal(fmt.Sprintf("Can't parse enviroment: %s", err.Error()))
 	}
-	env := models.Enviroment{RedisConfig: redis, SqlConfig: sqlConf, Port: port, CasbinWatcherEnable: watcherEnable, GoogleConf: gConf}
+	env := models.Enviroment{
+		RedisConfig:         redis,
+		SqlConfig:           sqlConf,
+		Port:                port,
+		CasbinWatcherEnable: watcherEnable,
+		FacebookConf:        facebookConf,
+		GithubConf:          githubConf,
+		GoogleConf:          gConf}
 	return env
 }
 
