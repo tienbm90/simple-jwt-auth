@@ -66,6 +66,9 @@ func (g GithubAPI) AuthHandler(c *gin.Context) {
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"message": "Error marshalling response. Please try agian."})
 		return
 	}
+
+
+
 	session.Set("user-id", u.Email)
 	err = session.Save()
 	if err != nil {

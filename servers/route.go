@@ -56,7 +56,7 @@ func (server *Server) InitializeRoutes() {
 	githubConf := &oauth2.Config{
 		ClientID:     server.enviroment.GithubConf.ClientID,
 		ClientSecret: server.enviroment.GithubConf.ClientSecret,
-		Scopes:       []string{"user:email", "repo"},
+		Scopes:       []string{"user"},
 		Endpoint:     githuboauth.Endpoint,
 	}
 
