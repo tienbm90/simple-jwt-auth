@@ -77,7 +77,9 @@ func (g GoogleAPI) AuthHandler(c *gin.Context) {
 
 	//save user into database if user is not exist
 	_, err = g.UserRepo.FindByEmail(u.Email)
+
 	if err != nil {
+		u.AuthorizorType = "Google"
 		_, err = g.UserRepo.Create(u)
 		if err != nil {
 			log.Println(err)

@@ -8,6 +8,7 @@ import (
 	"github.com/simple-jwt-auth/middleware"
 	"github.com/simple-jwt-auth/models"
 	"golang.org/x/oauth2"
+	"gorm.io/gorm"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -41,7 +42,7 @@ func (g GithubAPI) AuthHandler(c *gin.Context) {
 		return
 	}
 
-	log.Println(fmt.Sprintf("queryState: %s", queryState)	)
+	log.Println(fmt.Sprintf("queryState: %s", queryState))
 
 	code := c.Request.URL.Query().Get("code")
 	tok, err := g.Config.Exchange(oauth2.NoContext, code)
@@ -60,14 +61,38 @@ func (g GithubAPI) AuthHandler(c *gin.Context) {
 	}
 	defer userinfo.Body.Close()
 	data, _ := ioutil.ReadAll(userinfo.Body)
-	u := models.User{}
-	if err = json.Unmarshal(data, &u); err != nil {
+	githubUser := models.GithubUser{}
+	if err = json.Unmarshal(data, &githubUser); err != nil {
 		log.Println(err)
 		c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"message": "Error marshalling response. Please try agian."})
 		return
 	}
 
+	if githubUser.Email == "" {
+		primaryEmail, err := GetPrimaryEmail(client)
+		if err != nil {
+			githubUser.Email = fmt.Sprintf("%s@gmail.com", githubUser.Login)
+		} else {
+			githubUser.Email = primaryEmail.Email
+			githubUser.EmailVerified = primaryEmail.Verified
+		}
+	}
 
+	u := models.User{
+		Model:          gorm.Model{},
+		UserName:       githubUser.Login,
+		AuthorizorType: "Github",
+		Password:       "",
+		Sub:            "",
+		Name:           githubUser.Name,
+		GivenName:      "",
+		FamilyName:     "",
+		Profile:        githubUser.Url,
+		Picture:        githubUser.AvatarUrl,
+		Email:          githubUser.Email,
+		EmailVerified:  githubUser.EmailVerified,
+		Gender:         "",
+	}
 
 	session.Set("user-id", u.Email)
 	err = session.Save()
@@ -87,11 +112,11 @@ func (g GithubAPI) AuthHandler(c *gin.Context) {
 			c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"message": "Error while saving user. Please try again."})
 			return
 		}
-		log.Println(fmt.Sprintf("Not found user %s. Create new record", u.Email))
+		log.Println(fmt.Sprintf("Not found user %s. Create new record", githubUser.Email))
 	} else {
 		seen = true
 	}
-	c.HTML(http.StatusOK, "battle.tmpl", gin.H{"email": u.Email, "seen": seen})
+	c.HTML(http.StatusOK, "battle.tmpl", gin.H{"email": githubUser.Email, "seen": seen})
 }
 
 // LoginHandler handles the login procedure.
@@ -132,4 +157,25 @@ func (g GithubAPI) FieldHandler(c *gin.Context) {
 
 func (g GithubAPI) ApiHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, "Ok test")
+}
+
+func GetPrimaryEmail(client *http.Client) (models.GithubEmail, error) {
+	userinfo, err := client.Get("https://api.github.com/user")
+	if err != nil {
+		log.Println(err)
+		return models.GithubEmail{}, err
+	}
+	defer userinfo.Body.Close()
+	data, _ := ioutil.ReadAll(userinfo.Body)
+	githubEmails := models.GithubEmails{}
+	if err = json.Unmarshal(data, &githubEmails); err != nil {
+		log.Println(err)
+		return models.GithubEmail{}, err
+	}
+	for _, ema := range githubEmails {
+		if ema.Primary == true {
+			return ema, nil
+		}
+	}
+	return models.GithubEmail{}, err
 }

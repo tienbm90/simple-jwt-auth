@@ -7,17 +7,18 @@ import (
 
 type User struct {
 	gorm.Model
-	UserName      string `json:"username"`
-	Password      string `json:"password"`
-	Sub           string `json:"sub"`
-	Name          string `json:"name"`
-	GivenName     string `json:"given_name"`
-	FamilyName    string `json:"family_name"`
-	Profile       string `json:"profile"`
-	Picture       string `json:"picture"`
-	Email         string `json:"email" gorm:"unique"`
-	EmailVerified bool   `json:"email_verified"`
-	Gender        string `json:"gender"`
+	AuthorizorType string `json:"authorizor_type"`
+	UserName       string `json:"username"`
+	Password       string `json:"password"`
+	Sub            string `json:"sub"`
+	Name           string `json:"name"`
+	GivenName      string `json:"given_name"`
+	FamilyName     string `json:"family_name"`
+	Profile        string `json:"profile"`
+	Picture        string `json:"picture"`
+	Email          string `json:"email" gorm:"unique"`
+	EmailVerified  bool   `json:"email_verified"`
+	Gender         string `json:"gender"`
 }
 
 // SetPassword sets a new password stored as hash.
