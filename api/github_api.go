@@ -116,7 +116,7 @@ func (g GithubAPI) AuthHandler(c *gin.Context) {
 	} else {
 		seen = true
 	}
-	c.HTML(http.StatusOK, "battle.tmpl", gin.H{"email": githubUser.Email, "seen": seen})
+	c.HTML(http.StatusOK, "battle.tmpl", gin.H{"email": u.Email, "seen": seen})
 }
 
 // LoginHandler handles the login procedure.
