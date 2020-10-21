@@ -70,7 +70,7 @@ func (server *Server) InitializeRoutes() {
 		UserRepo: &userRepos,
 	}
 	// jwt api
-	server.Router.POST("/login/token", jwtApi.JwtLogin)
+	server.Router.POST("/jwt/login", jwtApi.JwtLogin)
 	server.Router.Use(gin.Logger())
 	server.Router.Use(gin.Recovery())
 	server.Router.Static("/css", "./static/css")
@@ -78,7 +78,7 @@ func (server *Server) InitializeRoutes() {
 	server.Router.LoadHTMLGlob("./static/templates/*")
 
 	// jwt
-	jwt := server.Router.Group("/api")
+	jwt := server.Router.Group("/jwt")
 	jwt.Use(middleware.TokenAuthMiddleware())
 	{
 		jwt.POST("/auth/policy", middleware.AuthorizeJwtToken("/auth/policy", "POST", server.Enforcer), casbinService.CreatePolicy)
