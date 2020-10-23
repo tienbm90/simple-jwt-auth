@@ -37,17 +37,19 @@ func AuthorizeJwtToken(obj string, act string, enforcer *casbin.Enforcer) gin.Ha
 			c.JSON(http.StatusUnauthorized, "unauthorized")
 			return
 		}
+
 		// casbin enforces policy
-		log.Printf("Meta: %s:%s:%s", metadata.UserName, obj, act)
+		log.Println("Meta: %s:%s:%s", metadata.UserName, obj, act)
 		ok, err := enforce(metadata.UserName, obj, act, enforcer)
 		//ok, err := enforce(val.(string), obj, act, adapter)
+
 		if err != nil {
 			log.Println(err)
 			c.AbortWithStatusJSON(500, "error occurred when authorizing user")
 			return
 		}
 		if !ok {
-			c.AbortWithStatusJSON(403, "forbidden")
+			c.AbortWithStatusJSON(403, "Permission Invalid")
 			return
 		}
 		c.Next()

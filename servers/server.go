@@ -65,26 +65,6 @@ func (server *Server) Close() {
 	}
 }
 
-//func (server *Server) CheckEnforcer(env models.Enviroment) {
-//	server.enviroment = env
-//	server.Router = gin.Default()
-//	server.RedisCli = utils.NewRedisDB(server.enviroment.RedisConfig.Host, server.enviroment.RedisConfig.Port, server.enviroment.RedisConfig.Password)
-//	dataSource := fmt.Sprintf("%s:%s@tcp(%s)/", server.enviroment.SqlConfig.Username, server.enviroment.SqlConfig.Passord, server.enviroment.SqlConfig.Address)
-//	server.Enforcer = auth.NewCasbinEnforcer(dataSource)
-//
-//	ok, err := server.Enforcer.Enforce("admin", "/auth/policy", "GET")
-//	if err != nil {
-//		log.Fatal(fmt.Sprintf("Error: %s", err.Error()))
-//	}
-//
-//	ok, err = server.Enforcer.Enforce("admin", "/auth/policy/1", "GET")
-//	if err != nil {
-//		log.Fatal(fmt.Sprintf("Error: %s", err.Error()))
-//	}
-//
-//	fmt.Println(ok)
-//}
-
 func (server *Server) InitDB(Dbdriver, DbUser, DbPassword, DbHost, DbPort, DbName string) {
 	var err error
 	if Dbdriver == "mysql" {

@@ -28,7 +28,7 @@ func (r *UserRepository) FindByID(id int) (User, error) {
 func (r *UserRepository) Validate(user User) (User, error) {
 	var us []User
 	//res := r.DB.Debug().Model(&User{}).Where("email = ?", user.Email).Scan(&us)
-	err := r.DB.Debug().Model(&User{}).Scan(&us).Error
+	err := r.DB.Debug().Model(&User{}).Where("email = ?", user.Email).Scan(&us).Error
 
 	u := us[0]
 	if err != nil {
