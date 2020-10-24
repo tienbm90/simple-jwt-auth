@@ -1,5 +1,4 @@
 package api
-
 import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
@@ -13,7 +12,6 @@ import (
 )
 
 var tokenManager = auth.JwtTokenManager{}
-
 type JwtApi struct {
 	UserRepo *models.UserRepository
 }
@@ -30,13 +28,11 @@ func (api JwtApi) JwtLogin(c *gin.Context) {
 	}
 
 	user, err := api.UserRepo.Validate(u)
-
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, "Please provide valid login details")
 		return
 	}
 	log.Println(user)
-
 	ts, err := tokenManager.CreateToken(strconv.FormatUint(uint64(user.ID), 10), user.UserName)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, err.Error())
@@ -48,6 +44,7 @@ func (api JwtApi) JwtLogin(c *gin.Context) {
 	//if saveErr != nil {
 	//	c.JSON(http.StatusUnprocessableEntity, saveErr.Error())
 	//}
+
 	tokens := map[string]string{
 		"access_token":  ts.AccessToken,
 		"refresh_token": ts.RefreshToken,

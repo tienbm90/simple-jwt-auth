@@ -10,3 +10,15 @@ type GroupPolicy struct {
 	Member  string `json:"member" forms:"member" query:"member"`
 	Group string `json:"group" forms:"group" query:"Group"`
 }
+
+
+type CasbinRule struct {
+
+	PType string `gorm:"varchar(100) index not null default ''" json:"pType"`
+	V0    string `gorm:"varchar(100) index not null default ''" json:"v0"`
+	V1    string `gorm:"varchar(100) index not null default ''" json:"v1"`
+	V2    string `gorm:"varchar(100) index not null default ''" json:"v2"`
+	V3    string `gorm:"varchar(100) index not null default ''" json:"v3"`
+	V4    string `gorm:"varchar(100) index not null default ''" json:"v4"`
+	V5    string `gorm:"varchar(100) index not null default ''" json:"v5"`
+}

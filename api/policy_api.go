@@ -4,6 +4,7 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/simple-jwt-auth/models"
+	"log"
 	"net/http"
 )
 
@@ -16,6 +17,8 @@ func NewCasbinService(enforcer *casbin.Enforcer) *CasbinService {
 }
 
 func (service *CasbinService) ListPolicy(c *gin.Context) {
+	//reload policies list
+	service.Enforcer.LoadPolicy()
 	policy := service.Enforcer.GetPolicy()
 	c.JSON(http.StatusOK, policy)
 }
@@ -41,11 +44,14 @@ func (service *CasbinService) DeletePolicy(c *gin.Context) {
 		return
 	}
 
-	ok, err := service.Enforcer.RemovePolicy(p.User, p.Path, p.Method)
+	_, err := service.Enforcer.RemovePolicy(p.User, p.Path, p.Method)
 	if err != nil {
+		log.Println(err.Error())
 		c.JSON(http.StatusBadRequest, err)
 	}
-	c.JSON(http.StatusOK, ok)
+
+	service.Enforcer.LoadPolicy()
+	c.JSON(http.StatusOK, "Policies delete successful")
 }
 
 func (service *CasbinService) CreateGroupPolicy(c *gin.Context) {
@@ -63,10 +69,12 @@ func (service *CasbinService) CreateGroupPolicy(c *gin.Context) {
 
 	c.JSON(http.StatusOK, p)
 }
+
 func (service *CasbinService) ListGroupPolicies(c *gin.Context) {
 	groups := service.Enforcer.GetGroupingPolicy()
 	c.JSON(http.StatusOK, groups)
 }
+
 func (service *CasbinService) DeleteGroupPolicy(c *gin.Context) {
 	var p models.GroupPolicy
 	if err := c.ShouldBindJSON(&p); err != nil {

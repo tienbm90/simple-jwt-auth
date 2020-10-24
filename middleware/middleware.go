@@ -3,6 +3,7 @@ package middleware
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -39,15 +40,14 @@ func AuthorizeJwtToken(obj string, act string, enforcer *casbin.Enforcer) gin.Ha
 		}
 
 		// casbin enforces policy
-		log.Println("Meta: %s:%s:%s", metadata.UserName, obj, act)
-		ok, err := enforce(metadata.UserName, obj, act, enforcer)
-		//ok, err := enforce(val.(string), obj, act, adapter)
 
+		ok, err := enforce(metadata.UserName, obj, act, enforcer)
 		if err != nil {
 			log.Println(err)
 			c.AbortWithStatusJSON(500, "error occurred when authorizing user")
 			return
 		}
+		log.Println(fmt.Sprintf("Meta: %s:%s:%s is ok? %t", metadata.UserName, obj, act, ok))
 		if !ok {
 			c.AbortWithStatusJSON(403, "Permission Invalid")
 			return
@@ -57,10 +57,10 @@ func AuthorizeJwtToken(obj string, act string, enforcer *casbin.Enforcer) gin.Ha
 }
 
 func enforce(sub string, obj string, act string, enforcer *casbin.Enforcer) (bool, error) {
+	enforcer.LoadPolicy()
 	ok, err := enforcer.Enforce(sub, obj, act)
 	return ok, err
 }
-
 
 // AuthorizeRequest is used to authorize a request for a certain end-point group.
 func AuthorizeOpenIdRequest() gin.HandlerFunc {
@@ -74,7 +74,6 @@ func AuthorizeOpenIdRequest() gin.HandlerFunc {
 		c.Next()
 	}
 }
-
 
 // RandToken generates a random @l length token.
 func RandToken(l int) (string, error) {

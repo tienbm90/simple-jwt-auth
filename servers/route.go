@@ -83,6 +83,7 @@ func (server *Server) InitializeRoutes() {
 	{
 		jwt.POST("/auth/policy", middleware.AuthorizeJwtToken("/jwt/auth/policy", "POST", server.Enforcer), casbinService.CreatePolicy)
 		jwt.GET("/auth/policy", middleware.AuthorizeJwtToken("/jwt/auth/policy", "GET", server.Enforcer), casbinService.ListPolicy)
+		jwt.DELETE("/auth/policy", middleware.AuthorizeJwtToken("/jwt/auth/policy", "DELETE", server.Enforcer), casbinService.DeletePolicy)
 		jwt.POST("/auth/grouppolicy", middleware.AuthorizeJwtToken("/jwt/auth/grouppolicy", "POST", server.Enforcer), casbinService.CreateGroupPolicy)
 		jwt.GET("/auth/grouppolicy", middleware.AuthorizeJwtToken("/jwt/auth/grouppolicy", "GET", server.Enforcer), casbinService.ListGroupPolicies)
 		//jwt.POST("/todo", middleware.AuthorizeJwtToken("resource", "write", server.Enforcer), api.CreateTodo)
