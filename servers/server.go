@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
+
 	"github.com/go-redis/redis/v7"
 	"github.com/simple-jwt-auth/middleware/auth"
 	"github.com/simple-jwt-auth/models"
@@ -28,8 +29,11 @@ type Server struct {
 }
 
 func (server *Server) Initialize(env models.Enviroment) {
+
+	//init server
 	server.enviroment = env
 	server.Router = gin.Default()
+
 	server.RedisCli = utils.NewRedisDB(
 		server.enviroment.RedisConfig.Host,
 		server.enviroment.RedisConfig.Port,

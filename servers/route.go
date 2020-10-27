@@ -3,20 +3,21 @@ package servers
 import (
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	ginserver "github.com/go-oauth2/gin-server"
 	"github.com/simple-jwt-auth/api"
 	"github.com/simple-jwt-auth/middleware"
-	"github.com/simple-jwt-auth/models"
+	simple_models "github.com/simple-jwt-auth/models"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/facebook"
 	githuboauth "golang.org/x/oauth2/github"
 	"golang.org/x/oauth2/google"
 	"log"
+	"net/http"
 )
 
 func (server *Server) InitializeRoutes() {
 	casbinService := api.NewCasbinService(server.Enforcer)
-
-	userRepos := models.ProvideUserRepository(server.DB)
+	userRepos := simple_models.ProvideUserRepository(server.DB)
 	jwtApi := api.CreateJwtApi(&userRepos)
 	token, err := middleware.RandToken(64)
 	if err != nil {
@@ -130,5 +131,24 @@ func (server *Server) InitializeRoutes() {
 	{
 		facebookOauth.GET("/field", facebookApi.FieldHandler)
 		facebookOauth.GET("/test", facebookApi.TestHandler)
+	}
+
+	//oauth2 api
+	auth := server.Router.Group("/oauth2")
+	{
+		auth.GET("/token", ginserver.HandleTokenRequest)
+	}
+
+	api := server.Router.Group("/api")
+	{
+		api.Use(ginserver.HandleTokenVerify())
+		api.GET("/test", func(c *gin.Context) {
+			ti, exists := c.Get(ginserver.DefaultConfig.TokenKey)
+			if exists {
+				c.JSON(http.StatusOK, ti)
+				return
+			}
+			c.String(http.StatusOK, "not found")
+		})
 	}
 }
