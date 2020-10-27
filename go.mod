@@ -12,6 +12,7 @@ require (
 	github.com/go-oauth2/gin-server v1.0.0
 	github.com/go-oauth2/oauth2/v4 v4.1.2
 	github.com/go-redis/redis/v7 v7.4.0
+	github.com/go-session/session v3.1.2+incompatible
 	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/joho/godotenv v1.3.0
 	github.com/myesui/uuid v1.0.0 // indirect

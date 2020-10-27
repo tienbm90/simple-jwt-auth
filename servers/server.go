@@ -47,6 +47,7 @@ func (server *Server) Initialize(env models.Enviroment) {
 		env.SqlConfig.Database)
 
 	server.Enforcer = auth.NewCasbinEnforcerFromDB(server.DB)
+
 	//init route
 	server.RD = auth.NewAuthService(server.RedisCli)
 
