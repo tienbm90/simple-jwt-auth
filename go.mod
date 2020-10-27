@@ -17,7 +17,7 @@ require (
 	github.com/myesui/uuid v1.0.0 // indirect
 	github.com/twinj/uuid v1.0.0
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
-	gopkg.in/oauth2.v3 v3.12.0 // indirect
+	gopkg.in/oauth2.v3 v3.12.0
 	gopkg.in/stretchr/testify.v1 v1.2.2 // indirect
 	gorm.io/driver/mysql v0.3.0
 	gorm.io/driver/postgres v0.2.6
