@@ -53,7 +53,6 @@ func NewCasbinEnforcer(connStr string) *casbin.Enforcer {
 }
 
 func NewCasbinEnforcerFromDB(db *gorm.DB) *casbin.Enforcer {
-
 	adapter, err := gormadapter.NewAdapterByDBUseTableName(db, "casbin", "rule")
 	if err != nil {
 		log.Fatal(fmt.Sprintf("Sqlerror: %s", err.Error()))
@@ -84,6 +83,14 @@ func NewCasbinEnforcerFromDB(db *gorm.DB) *casbin.Enforcer {
 		log.Fatal(fmt.Sprintf("Creating enforcer error: %s", err.Error()))
 	}
 
-
+	////create default policy
+	enforcer.AddPolicy("admin", "/auth/policy", "GET")
+	enforcer.AddPolicy("admin", "/auth/policy", "POST")
+	////create default policy
+	enforcer.AddPolicy("admin", "/auth/grouppolicy/*", "GET")
+	enforcer.AddPolicy("admin", "/auth/grouppolicy", "POST")
+	//
+	enforcer.AddGroupingPolicy("")
+	//enforcer.LoadPolicy()
 	return enforcer
 }

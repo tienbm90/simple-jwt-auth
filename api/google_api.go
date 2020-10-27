@@ -80,6 +80,7 @@ func (g GoogleAPI) AuthHandler(c *gin.Context) {
 
 	if err != nil {
 		u.AuthorizorType = "Google"
+		u.UserName = u.Email
 		_, err = g.UserRepo.Create(u)
 		if err != nil {
 			log.Println(err)

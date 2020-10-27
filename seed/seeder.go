@@ -52,7 +52,6 @@ var users = []models.User{
 }
 
 func Load(db *gorm.DB) {
-
 	dbExist := db.Migrator().HasTable(&models.User{})
 	if !dbExist {
 		err := db.Debug().Create(&models.User{}).Error
@@ -92,4 +91,19 @@ func Load(db *gorm.DB) {
 	hasPermiss, _ := enforcer.Enforce("admin", "/jwt/auth/policy", "DELETE")
 	st := fmt.Sprintf("%t", hasPermiss)
 	fmt.Println(st)
+	hasTable := db.Migrator().HasTable(&models.User{})
+	if hasTable {
+		db.Migrator().DropTable(&models.User{})
+	}
+
+	err := db.Debug().AutoMigrate(&models.User{}).Error
+	if err != nil {
+		log.Fatalf("cannot migrate table: %v", err)
+	}
+	for i, _ := range users {
+		err := db.Debug().Model(&models.User{}).Create(&users[i]).Error
+		if err != nil {
+			log.Fatalf("cannot seed users table: %v", err)
+		}
+	}
 }

@@ -96,16 +96,13 @@ func LoadEnv() models.Enviroment {
 var AuthServer servers.Server
 
 func main() {
-	//servers.Run()
 	Run()
 	log.Println("Server exiting")
 }
 
 func Run() {
 	AuthServer = servers.Server{}
-
 	env := LoadEnv()
 	AuthServer.Initialize(env)
 	AuthServer.Run()
-	//AuthServer.CheckEnforcer(env)
 }
