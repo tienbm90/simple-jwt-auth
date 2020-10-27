@@ -78,16 +78,16 @@ func Load(db *gorm.DB) {
 
 	//create default rbac rule
 	enforcer := auth.NewCasbinEnforcerFromDB(db)
+	//create default policy
+	enforcer.AddPolicy("admin", "/auth/policy", "GET")
+	enforcer.AddPolicy("admin", "/auth/policy", "POST")
+
+	enforcer.AddPolicy("admin", "/jwt/auth/policy", "GET")
+	enforcer.AddPolicy("admin", "/jwt/auth/policy", "POST")
+	enforcer.AddPolicy("admin", "/jwt/auth/policy", "DELETE")
 	////create default policy
-	//enforcer.AddPolicy("admin", "/auth/policy", "GET")
-	//enforcer.AddPolicy("admin", "/auth/policy", "POST")
-	//
-	//enforcer.AddPolicy("admin", "/jwt/auth/policy", "GET")
-	//enforcer.AddPolicy("admin", "/jwt/auth/policy", "POST")
-	//enforcer.AddPolicy("admin", "/jwt/auth/policy", "DELETE")
-	//////create default policy
-	//enforcer.AddPolicy("admin", "/jwt/auth/grouppolicy/*", "GET")
-	//enforcer.AddPolicy("admin", "/jwt/auth/grouppolicy", "POST")
+	enforcer.AddPolicy("admin", "/jwt/auth/grouppolicy/*", "GET")
+	enforcer.AddPolicy("admin", "/jwt/auth/grouppolicy", "POST")
 
 	hasPermiss, _ := enforcer.Enforce("admin", "/jwt/auth/policy", "DELETE")
 	st := fmt.Sprintf("%t", hasPermiss)

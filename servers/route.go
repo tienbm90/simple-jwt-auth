@@ -15,6 +15,7 @@ import (
 
 func (server *Server) InitializeRoutes() {
 	casbinService := api.NewCasbinService(server.Enforcer)
+
 	userRepos := models.ProvideUserRepository(server.DB)
 	jwtApi := api.CreateJwtApi(&userRepos)
 	token, err := middleware.RandToken(64)

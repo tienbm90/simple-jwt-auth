@@ -40,7 +40,6 @@ func AuthorizeJwtToken(obj string, act string, enforcer *casbin.Enforcer) gin.Ha
 		}
 
 		// casbin enforces policy
-
 		ok, err := enforce(metadata.UserName, obj, act, enforcer)
 		if err != nil {
 			log.Println(err)
@@ -57,7 +56,7 @@ func AuthorizeJwtToken(obj string, act string, enforcer *casbin.Enforcer) gin.Ha
 }
 
 func enforce(sub string, obj string, act string, enforcer *casbin.Enforcer) (bool, error) {
-	enforcer.LoadPolicy()
+	//enforcer.LoadPolicy()
 	ok, err := enforcer.Enforce(sub, obj, act)
 	return ok, err
 }

@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	"gorm.io/gorm"
 )
 
@@ -30,16 +32,21 @@ func (r *UserRepository) Validate(user User) (User, error) {
 	//res := r.DB.Debug().Model(&User{}).Where("email = ?", user.Email).Scan(&us)
 	err := r.DB.Debug().Model(&User{}).Where("email = ?", user.Email).Scan(&us).Error
 
-	u := us[0]
 	if err != nil {
-		return User{}, err
+		fmt.Errorf("%s", err.Error())
 	}
 
-	if u.UserName == user.UserName && u.Password == user.Password {
-		return u, nil
+	if len(us) > 0 {
+		u := us[0]
+		if err != nil {
+			return User{}, err
+		}
+		if u.UserName == user.UserName && u.Password == user.Password {
+			return u, nil
+		}
 	}
 
-	return User{}, err
+	return User{}, errors.New("Can't find any record matching with input")
 }
 
 func (r *UserRepository) FindByEmail(email string) (User, error) {
