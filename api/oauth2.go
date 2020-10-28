@@ -12,6 +12,8 @@ import (
 	ginsvr "github.com/go-oauth2/oauth2/v4/server"
 	"github.com/go-oauth2/oauth2/v4/store"
 	"github.com/go-session/session"
+	"log"
+
 	//ginsvr "github.com/go-oauth2/gin-server"
 	//"github.com/go-session/session"
 	//"gopkg.in/oauth2.v3"
@@ -138,18 +140,24 @@ func (a *Oauth2API) Authorize(c *gin.Context) {
 	var form url.Values
 	if v, ok := store.Get("ReturnUri"); ok {
 		form = v.(url.Values)
+		log.Printf("METHOD: %s, ReturnUri: %s", c.Request.Method, v)
 	}
 	r.Form = form
+	redirectUri := form.Get("redirect_uri")
 
 	store.Delete("ReturnUri")
 	store.Save()
 
 	user_id, err := a.gServer.UserAuthorizationHandler(w, r)
-	fmt.Println(user_id)
 
 	if err != nil {
 		fmt.Printf("Verify: %s", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
+	} else {
+		if user_id != "" {
+			fmt.Printf("Logged in user: %s:%s ưn", user_id, redirectUri)
+			http.Redirect(w, r, redirectUri, http.StatusFound)
+		}
 	}
 }
 
@@ -166,6 +174,7 @@ func userAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userID string
 		}
 
 		store.Set("ReturnUri", r.Form)
+		log.Printf("Set ReturnURI: %s", r.Form)
 		store.Save()
 
 		w.Header().Set("Location", "/oauth2/login")
@@ -176,6 +185,7 @@ func userAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userID string
 	userID = uid.(string)
 	store.Delete("LoggedInUserID")
 	store.Save()
+
 	return
 }
 
@@ -216,6 +226,10 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	v, ok := store.Get("ReturnUri")
+	if ok {
+		log.Printf("Stored ReturnURI: %s", v)
+	}
 	outputHTML(w, r, "static/templates/oauth2/auth.html")
 }
 

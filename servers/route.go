@@ -28,6 +28,7 @@ func (server *Server) InitializeRoutes() {
 		log.Fatal("unable to generate random token: ", err)
 	}
 	store := sessions.NewCookieStore([]byte(token))
+
 	store.Options(sessions.Options{
 		Path:   "/",
 		MaxAge: 86400 * 7,
@@ -40,7 +41,8 @@ func (server *Server) InitializeRoutes() {
 		Endpoint:     google.Endpoint,
 		RedirectURL:  server.enviroment.GoogleConf.RedirectUrl,
 		Scopes: []string{
-			"https://www.googleapis.com/oauth2/userinfo.email", // You have to select your own scope from here -> https://developers.google.com/identity/protocols/googlescopes#google_sign-in
+			//"https://www.googleapis.com/oauth2/userinfo.email", // You have to select your own scope from here -> https://developers.google.com/identity/protocols/googlescopes#google_sign-in
+			"https://www.googleapis.com/auth/userinfo.email", // You have to select your own scope from here -> https://developers.google.com/identity/protocols/googlescopes#google_sign-in
 		},
 	}
 
@@ -109,7 +111,7 @@ func (server *Server) InitializeRoutes() {
 	googleOauth.GET("/", googleApi.IndexHandler)
 
 	googleOauth.GET("/login", googleApi.LoginHandler)
-	googleOauth.GET("/oauth2", googleApi.AuthHandler)
+	googleOauth.GET("/auth", googleApi.AuthHandler)
 	googleOauth.Use(middleware.AuthorizeOpenIdRequest())
 	{
 		googleOauth.GET("/field", googleApi.FieldHandler)
@@ -117,12 +119,13 @@ func (server *Server) InitializeRoutes() {
 	}
 
 	//init route for github api
+
 	githubOauth := server.Router.Group("/oauth/github")
 	githubOauth.Use(sessions.Sessions("goquestsession", store))
 	githubOauth.GET("/", githubApi.IndexHandler)
 
 	githubOauth.GET("/login", githubApi.LoginHandler)
-	githubOauth.GET("/oauth2", githubApi.AuthHandler)
+	githubOauth.GET("/auth", githubApi.AuthHandler)
 	githubOauth.Use(middleware.AuthorizeOpenIdRequest())
 	{
 		githubOauth.GET("/field", githubApi.FieldHandler)
@@ -135,7 +138,7 @@ func (server *Server) InitializeRoutes() {
 	facebookOauth.GET("/", facebookApi.IndexHandler)
 
 	facebookOauth.GET("/login", facebookApi.LoginHandler)
-	facebookOauth.GET("/oauth2", facebookApi.AuthHandler)
+	facebookOauth.GET("/auth", facebookApi.AuthHandler)
 	facebookOauth.Use(middleware.AuthorizeOpenIdRequest())
 	{
 		facebookOauth.GET("/field", facebookApi.FieldHandler)
