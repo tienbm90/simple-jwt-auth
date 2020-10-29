@@ -42,6 +42,7 @@ func (g GoogleAPI) AuthHandler(c *gin.Context) {
 	}
 
 	log.Println(queryState)
+	log.Printf("Query: %s", c.Request.URL.Query())
 
 	code := c.Request.URL.Query().Get("code")
 	tok, err := g.Config.Exchange(oauth2.NoContext, code)
@@ -83,7 +84,7 @@ func (g GoogleAPI) AuthHandler(c *gin.Context) {
 		u.UserName = u.Email
 		_, err = g.UserRepo.Create(u)
 		if err != nil {
-			log.Println(err)
+			log.Println(err.Error())
 			c.HTML(http.StatusBadRequest, "error.tmpl", gin.H{"message": "Error while saving user. Please try again."})
 			return
 		}
@@ -113,13 +114,13 @@ func (g GoogleAPI) LoginHandler(c *gin.Context) {
 
 	// get login url
 	link := g.Config.AuthCodeURL(state)
-	c.HTML(http.StatusOK, "auth.tmpl", gin.H{"link": link})
+	c.HTML(http.StatusOK, "auth.tmpl", gin.H{"link": link, "provider": "Google"})
 }
 
 func (g GoogleAPI) TestHandler(c *gin.Context) {
 	session := sessions.Default(c)
 	userID := session.Get("user-id")
-	c.HTML(http.StatusOK, "field.tmpl", gin.H{"user": userID, "link": "/oauth/field"})
+	c.HTML(http.StatusOK, "test.tmpl", gin.H{"user": userID, "link": "/oauth/field"})
 
 }
 

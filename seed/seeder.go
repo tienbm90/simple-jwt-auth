@@ -53,27 +53,30 @@ var users = []models.User{
 
 func Load(db *gorm.DB) {
 	dbExist := db.Migrator().HasTable(&models.User{})
+	log.Printf("DB existied: %t",dbExist)
 	if !dbExist {
 		err := db.Debug().Create(&models.User{}).Error
 		if err != nil {
 			log.Fatal("Migration error: %s", err.Error())
 		}
-	} else {
-		db.Migrator().DropTable(&models.User{})
-		db.Debug().Migrator().CreateTable(&models.User{})
 	}
+	//else {
+	//	db.Migrator().DropTable(&models.User{})
+	//	db.Debug().Migrator().CreateTable(&models.User{})
+	//}
 
 	//delete old data
-	db.Debug().Model(&models.User{}).Delete(&models.User{}).Where("1 = 1")
+	//db.Debug().Model(&models.User{}).Delete(&models.User{}).Where("1 = 1")
+
 
 	// sync new data
-	for _, v := range users {
-		err := db.Debug().Model(&models.User{}).Create(&v).Error
-		if err != nil {
-			log.Fatalf("cannot seed users table: %v", err)
-		}
-
-	}
+	//for _, v := range users {
+	//	err := db.Debug().Model(&models.User{}).Create(&v).Error
+	//	if err != nil {
+	//		log.Fatalf("cannot seed users table: %v", err)
+	//	}
+	//
+	//}
 
 	//create default rbac rule
 	enforcer := auth.NewCasbinEnforcerFromDB(db)
@@ -91,8 +94,4 @@ func Load(db *gorm.DB) {
 	hasPermiss, _ := enforcer.Enforce("admin", "/jwt/auth/policy", "DELETE")
 	st := fmt.Sprintf("%t", hasPermiss)
 	fmt.Println(st)
-	hasTable := db.Migrator().HasTable(&models.User{})
-	if hasTable {
-		db.Migrator().DropTable(&models.User{})
-	}
 }

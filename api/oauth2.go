@@ -34,11 +34,6 @@ type Oauth2API struct {
 	once    sync.Once
 }
 
-//var (
-//	gServer *server.Server
-//	once    sync.Once
-//)
-
 // InitServer Initialize the service
 func (a *Oauth2API) InitServer(manager oauth2.Manager) *ginsvr.Server {
 	a.once.Do(func() {
@@ -145,6 +140,7 @@ func (a *Oauth2API) Authorize(c *gin.Context) {
 	r.Form = form
 	redirectUri := form.Get("redirect_uri")
 
+	log.Printf("Retrieved stated: %s", c.Request.URL)
 	store.Delete("ReturnUri")
 	store.Save()
 
@@ -168,6 +164,7 @@ func userAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userID string
 	}
 
 	uid, ok := store.Get("LoggedInUserID")
+
 	if !ok {
 		if r.Form == nil {
 			r.ParseForm()
@@ -181,7 +178,10 @@ func userAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userID string
 		w.WriteHeader(http.StatusFound)
 		return
 	}
-
+	state, ok := store.Get("State")
+	if ok {
+		log.Printf("Staet: %s", state)
+	}
 	userID = uid.(string)
 	store.Delete("LoggedInUserID")
 	store.Save()
@@ -221,8 +221,9 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, ok := store.Get("LoggedInUserID"); !ok {
+		log.Printf("User doesnot log in. Loggin!!!!")
 		w.Header().Set("Location", "/oauth2/login")
-		w.WriteHeader(http.StatusFound)
+
 		return
 	}
 

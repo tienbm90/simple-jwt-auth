@@ -119,7 +119,6 @@ func (server *Server) InitializeRoutes() {
 	}
 
 	//init route for github api
-
 	githubOauth := server.Router.Group("/oauth/github")
 	githubOauth.Use(sessions.Sessions("goquestsession", store))
 	githubOauth.GET("/", githubApi.IndexHandler)
@@ -154,6 +153,7 @@ func (server *Server) InitializeRoutes() {
 		oauth2.GET("/login", oauth2_api.Login)
 		oauth2.POST("/login", oauth2_api.Login)
 		oauth2.GET("/auth", oauth2_api.Authenicate)
+		oauth2.POST("/auth", oauth2_api.Authenicate)
 		oauth2.GET("/authorize", oauth2_api.Authorize)
 		oauth2.POST("/authorize", oauth2_api.Authorize)
 		oauth2.GET("/token", oauth2_api.HandleTokenRequest)
