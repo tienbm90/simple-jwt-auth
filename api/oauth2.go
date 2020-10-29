@@ -84,6 +84,9 @@ func (a *Oauth2API) Test(c *gin.Context) {
 
 func ProviderOauth2API() Oauth2API {
 	// init oauth2 server
+
+
+
 	manager := manage.NewDefaultManager()
 	manager.SetAuthorizeCodeTokenCfg(manage.DefaultAuthorizeCodeTokenCfg)
 
@@ -98,6 +101,11 @@ func ProviderOauth2API() Oauth2API {
 		ID:     "222222",
 		Secret: "22222222",
 		Domain: "http://localhost:9094",
+	})
+	clientStore.Set("363107987886-5bds1u7gvdijp0cpq44ggbsf0ln6o9i5.apps.googleusercontent.com", &oauth2_modesl.Client{
+		ID:     "363107987886-5bds1u7gvdijp0cpq44ggbsf0ln6o9i5.apps.googleusercontent.com",
+		Secret: "WCbzxBobh7-CqkSGFsfyzAk3",
+		Domain: "http://localhost:8085",
 	})
 
 	manager.MapClientStorage(clientStore)
