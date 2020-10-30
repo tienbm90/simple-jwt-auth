@@ -152,9 +152,9 @@ func (server *Server) InitializeRoutes() {
 	//init route for oauth2 api
 
 	oauth2_api := api.ProviderOauth2API()
-
-	//oauth2 := server.Router.Group("/oauth2")
 	oauth2 := server.Router.Group(fmt.Sprintf("/%s", utils.OAUTH2_PREFIX))
+	//oauth2 := server.Router.Group(fmt.Sprintf("/	%s", utils.OAUTH2_PREFIX))
+	oauth2.Use(sessions.Sessions("goquestsession", store))
 	{
 		oauth2.GET("/login", oauth2_api.Login)
 		oauth2.POST("/login", oauth2_api.Login)

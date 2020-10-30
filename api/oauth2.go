@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/go-oauth2/oauth2/v4/errors"
 	"github.com/go-oauth2/oauth2/v4/generates"
@@ -26,7 +27,6 @@ import (
 	//"gopkg.in/oauth2.v3/store"
 	"net/http"
 	"net/url"
-	"os"
 	"sync"
 )
 
@@ -134,46 +134,87 @@ func (a *Oauth2API) Test(c *gin.Context) {
 }
 
 func (a *Oauth2API) Login(c *gin.Context) {
-	loginHandler(c.Writer, c.Request)
-}
-
-func (a *Oauth2API) Authenicate(c *gin.Context) {
-	authHandler(c.Writer, c.Request)
-	c.Abort()
-}
-
-func (a *Oauth2API) Authorize(c *gin.Context) {
-	r := c.Request
 	w := c.Writer
-
-	store, err := session.Start(r.Context(), w, r)
+	store, err := session.Start(c.Request.Context(), w, c.Request)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	var form url.Values
-	if v, ok := store.Get("ReturnUri"); ok {
-		form = v.(url.Values)
-		log.Printf("METHOD: %s, ReturnUri: %s", c.Request.Method, v)
+	if c.Request.Method == "POST" {
+		if c.Request.Form == nil {
+			if err := c.Request.ParseForm(); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+		store.Set("LoggedInUserID", c.Request.Form.Get("username"))
+		store.Save()
+
+		w.Header().Set("Location", fmt.Sprintf("/%s/%s", utils.OAUTH2_PREFIX, "auth"))
+		w.WriteHeader(http.StatusFound)
+		return
 	}
-	r.Form = form
+	//outputHTML(w, r, "static/templates/oauth2/login.html")
+	c.HTML(http.StatusFound, "login.tmpl", gin.H{"link": "/oauth2/login"})
+	//c.Abort()
+}
 
-	log.Printf("Retrieved stated: %s", c.Request.URL)
-	store.Delete("ReturnUri")
-	store.Save()
+func (a *Oauth2API) Authenicate(c *gin.Context) {
+	//r := c.Request
+	//w := c.Writer
+	//store, err := session.Start(nil, w, r)
+	store := sessions.Default(c)
 
-	err = a.gServer.HandleAuthorizeRequest(w, r)
+	store.Set("state", c.Request.Form.Get("state"))
+	log.Printf("Authenticate state: %s \n", store.Get("state") )
+
+
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+	//
+	////check if user is logged in
+	//if _, ok := store.Get("LoggedInUserID"); !ok {
+	//	w.Header().Set("Location", fmt.Sprintf("/%s/%s", utils.OAUTH2_PREFIX, "login"))
+	//	return
+	//}
+	//
+	//v, ok := store.Get("ReturnUri")
+	//if ok {
+	//	log.Printf("Stored ReturnURI: %s", v)
+	//}
+	c.HTML(http.StatusFound, "auth.tmpl", gin.H{"link": "link"})
+}
+
+func (a *Oauth2API) Authorize(c *gin.Context) {
+	r := c.Request
+	w := c.Writer
+	store := sessions.Default(c)
+
+	log.Println(store.Get("state"))
+	store.Set("state", "xyz")
+	//sessionStore, err := session.Start(r.Context(), w, r)
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+
+	var form url.Values
+	form = c.Request.Form
+	log.Printf("Form: %s", form)
+	//sessionStore.Set("state", form.Get(""))
+	//sessionStore.Delete("ReturnUri")
+	//sessionStore.Save()
+
+
+	err := a.gServer.HandleAuthorizeRequest(w, r)
 
 	if err != nil {
 		fmt.Printf("Verify: %s", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	//else {
-	//redirectUri := form.Get("redirect_uri")
-
-	//	http.Redirect(w, r, redirectUri, http.StatusFound)
-	//}
 }
 
 func userAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userID string, err error) {
@@ -181,83 +222,20 @@ func userAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userID string
 	if err != nil {
 		return
 	}
-
 	uid, ok := store.Get("LoggedInUserID")
-
 	if !ok {
 		if r.Form == nil {
 			r.ParseForm()
 		}
-
 		store.Set("ReturnUri", r.Form)
-		log.Printf("Set ReturnURI: %s", r.Form)
 		store.Save()
-
 		w.Header().Set("Location", fmt.Sprintf("/%s/%s", utils.OAUTH2_PREFIX, "login"))
 		w.WriteHeader(http.StatusFound)
 		return
-	}
-	state, ok := store.Get("State")
-	if ok {
-		log.Printf("Staet: %s", state)
 	}
 	userID = uid.(string)
 	store.Delete("LoggedInUserID")
 	store.Save()
 
 	return
-}
-
-func loginHandler(w http.ResponseWriter, r *http.Request) {
-	store, err := session.Start(r.Context(), w, r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if r.Method == "POST" {
-		if r.Form == nil {
-			if err := r.ParseForm(); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-		}
-		store.Set("LoggedInUserID", r.Form.Get("username"))
-		store.Save()
-
-		w.Header().Set("Location", fmt.Sprintf("/%s/%s", utils.OAUTH2_PREFIX, "auth"))
-		w.WriteHeader(http.StatusFound)
-		return
-	}
-	outputHTML(w, r, "static/templates/oauth2/login.html")
-}
-
-func authHandler(w http.ResponseWriter, r *http.Request) {
-	store, err := session.Start(nil, w, r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if _, ok := store.Get("LoggedInUserID"); !ok {
-		w.Header().Set("Location", fmt.Sprintf("/%s/%s", utils.OAUTH2_PREFIX, "login"))
-		return
-	}
-
-	v, ok := store.Get("ReturnUri")
-	if ok {
-		log.Printf("Stored ReturnURI: %s", v)
-	}
-	outputHTML(w, r, "static/templates/oauth2/auth.html")
-}
-
-func outputHTML(w http.ResponseWriter, req *http.Request, filename string) {
-	file, err := os.Open(filename)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-	defer file.Close()
-	fi, _ := file.Stat()
-	http.ServeContent(w, req, file.Name(), fi.ModTime(), file)
 }
