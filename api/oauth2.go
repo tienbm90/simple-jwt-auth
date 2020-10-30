@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/go-oauth2/oauth2/v4"
+	"github.com/go-oauth2/oauth2/v4/errors"
 	"github.com/go-oauth2/oauth2/v4/generates"
 	"github.com/go-oauth2/oauth2/v4/manage"
 	oauth2_modesl "github.com/go-oauth2/oauth2/v4/models"
 	ginsvr "github.com/go-oauth2/oauth2/v4/server"
 	"github.com/go-oauth2/oauth2/v4/store"
 	"github.com/go-session/session"
+	"github.com/simple-jwt-auth/utils"
 	"log"
+	"time"
 
 	//ginsvr "github.com/go-oauth2/gin-server"
 	//"github.com/go-session/session"
@@ -26,7 +28,6 @@ import (
 	"net/url"
 	"os"
 	"sync"
-	"time"
 )
 
 type Oauth2API struct {
@@ -34,22 +35,73 @@ type Oauth2API struct {
 	once    sync.Once
 }
 
-// InitServer Initialize the service
-func (a *Oauth2API) InitServer(manager oauth2.Manager) *ginsvr.Server {
-	a.once.Do(func() {
-		a.gServer = ginsvr.NewDefaultServer(manager)
+func ProviderOauth2API() Oauth2API {
+	// init oauth2 server
+
+	manager := manage.NewDefaultManager()
+	manager.SetAuthorizeCodeTokenCfg(manage.DefaultAuthorizeCodeTokenCfg)
+
+	// token store
+	//manager.MustTokenStorage(store.NewFileTokenStore("data.db"))
+	manager.MustTokenStorage(store.NewMemoryTokenStore())
+	manager.MapAccessGenerate(generates.NewJWTAccessGenerate("", []byte("00000000"), jwt.SigningMethodHS512))
+
+	// client store
+	clientStore := store.NewClientStore()
+	clientStore.Set("222222", &oauth2_modesl.Client{
+		ID:     "222222",
+		Secret: "22222222",
+		Domain: "http://localhost:8085",
 	})
-	return a.gServer
+
+	manager.MapClientStorage(clientStore)
+	// Initialize the oauth2 service
+
+	svr := ginsvr.NewServer(ginsvr.NewConfig(), manager)
+
+	svr.SetPasswordAuthorizationHandler(func(username, password string) (userID string, err error) {
+		if username == "test" && password == "test" {
+			userID = "test"
+		}
+		return
+	})
+
+	svr.SetUserAuthorizationHandler(userAuthorizeHandler)
+
+	svr.SetInternalErrorHandler(func(err error) (re *errors.Response) {
+		log.Println("Internal Error:", err.Error())
+		return
+	})
+
+	svr.SetResponseErrorHandler(func(re *errors.Response) {
+		log.Println("Response Error:", re.Error.Error())
+	})
+
+	api := Oauth2API{
+		gServer: svr,
+		once:    sync.Once{},
+	}
+
+	return api
 }
 
+// InitServer Initialize the service
+//func (a *Oauth2API) InitServer(manager oauth2.Manager) *ginsvr.Server {
+//	a.once.Do(func() {
+//		a.gServer = ginsvr.NewDefaultServer(manager)
+//	})
+//	return a.gServer
+//}
+
 // HandleAuthorizeRequest the authorization request handling
+
 func (a *Oauth2API) HandleAuthorizeRequest(c *gin.Context) {
 	err := a.gServer.HandleAuthorizeRequest(c.Writer, c.Request)
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	c.Abort()
+
 }
 
 // HandleTokenRequest token request handling
@@ -59,7 +111,6 @@ func (a *Oauth2API) HandleTokenRequest(c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	c.Abort()
 }
 
 // HandleTokenRequest token request handling
@@ -80,45 +131,6 @@ func (a *Oauth2API) Test(c *gin.Context) {
 	e := json.NewEncoder(w)
 	e.SetIndent("", "  ")
 	e.Encode(data)
-}
-
-func ProviderOauth2API() Oauth2API {
-	// init oauth2 server
-
-
-
-	manager := manage.NewDefaultManager()
-	manager.SetAuthorizeCodeTokenCfg(manage.DefaultAuthorizeCodeTokenCfg)
-
-	// token store
-	//manager.MustTokenStorage(store.NewFileTokenStore("data.db"))
-	manager.MustTokenStorage(store.NewMemoryTokenStore())
-	manager.MapAccessGenerate(generates.NewJWTAccessGenerate("", []byte("00000000"), jwt.SigningMethodHS512))
-
-	// client store
-	clientStore := store.NewClientStore()
-	clientStore.Set("222222", &oauth2_modesl.Client{
-		ID:     "222222",
-		Secret: "22222222",
-		Domain: "http://localhost:9094",
-	})
-	clientStore.Set("363107987886-5bds1u7gvdijp0cpq44ggbsf0ln6o9i5.apps.googleusercontent.com", &oauth2_modesl.Client{
-		ID:     "363107987886-5bds1u7gvdijp0cpq44ggbsf0ln6o9i5.apps.googleusercontent.com",
-		Secret: "WCbzxBobh7-CqkSGFsfyzAk3",
-		Domain: "http://localhost:8085",
-	})
-
-	manager.MapClientStorage(clientStore)
-	// Initialize the oauth2 service
-
-	svr := ginsvr.NewServer(ginsvr.NewConfig(), manager)
-	svr.SetUserAuthorizationHandler(userAuthorizeHandler)
-	api := Oauth2API{
-		gServer: svr,
-		once:    sync.Once{},
-	}
-
-	return api
 }
 
 func (a *Oauth2API) Login(c *gin.Context) {
@@ -146,23 +158,22 @@ func (a *Oauth2API) Authorize(c *gin.Context) {
 		log.Printf("METHOD: %s, ReturnUri: %s", c.Request.Method, v)
 	}
 	r.Form = form
-	redirectUri := form.Get("redirect_uri")
 
 	log.Printf("Retrieved stated: %s", c.Request.URL)
 	store.Delete("ReturnUri")
 	store.Save()
 
-	user_id, err := a.gServer.UserAuthorizationHandler(w, r)
+	err = a.gServer.HandleAuthorizeRequest(w, r)
 
 	if err != nil {
 		fmt.Printf("Verify: %s", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
-	} else {
-		if user_id != "" {
-			fmt.Printf("Logged in user: %s:%s ưn", user_id, redirectUri)
-			http.Redirect(w, r, redirectUri, http.StatusFound)
-		}
 	}
+	//else {
+	//redirectUri := form.Get("redirect_uri")
+
+	//	http.Redirect(w, r, redirectUri, http.StatusFound)
+	//}
 }
 
 func userAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userID string, err error) {
@@ -182,7 +193,7 @@ func userAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userID string
 		log.Printf("Set ReturnURI: %s", r.Form)
 		store.Save()
 
-		w.Header().Set("Location", "/oauth2/login")
+		w.Header().Set("Location", fmt.Sprintf("/%s/%s", utils.OAUTH2_PREFIX, "login"))
 		w.WriteHeader(http.StatusFound)
 		return
 	}
@@ -214,7 +225,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		store.Set("LoggedInUserID", r.Form.Get("username"))
 		store.Save()
 
-		w.Header().Set("Location", "/oauth2/auth")
+		w.Header().Set("Location", fmt.Sprintf("/%s/%s", utils.OAUTH2_PREFIX, "auth"))
 		w.WriteHeader(http.StatusFound)
 		return
 	}
@@ -229,9 +240,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, ok := store.Get("LoggedInUserID"); !ok {
-		log.Printf("User doesnot log in. Loggin!!!!")
-		w.Header().Set("Location", "/oauth2/login")
-
+		w.Header().Set("Location", fmt.Sprintf("/%s/%s", utils.OAUTH2_PREFIX, "login"))
 		return
 	}
 
