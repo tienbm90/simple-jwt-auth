@@ -152,7 +152,6 @@ func (server *Server) InitializeRoutes() {
 	//init route for oauth2 api
 
 	oauth2_api := api.ProviderOauth2API()
-
 	//oauth2 := server.Router.Group("/oauth2")
 	oauth2 := server.Router.Group(fmt.Sprintf("/%s", utils.OAUTH2_PREFIX))
 	{
