@@ -9,16 +9,15 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/contrib v0.0.0-20201005132743-ca038bbf2944
 	github.com/gin-gonic/gin v1.6.3
-	github.com/go-oauth2/gin-server v1.0.0
 	github.com/go-oauth2/oauth2/v4 v4.1.2
 	github.com/go-redis/redis/v7 v7.4.0
+	github.com/go-session/gin-session v3.1.0+incompatible
 	github.com/go-session/session v3.1.2+incompatible
 	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/joho/godotenv v1.3.0
 	github.com/myesui/uuid v1.0.0 // indirect
 	github.com/twinj/uuid v1.0.0
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
-	gopkg.in/oauth2.v3 v3.12.0
 	gopkg.in/stretchr/testify.v1 v1.2.2 // indirect
 	gorm.io/driver/mysql v0.3.0
 	gorm.io/driver/postgres v0.2.6

@@ -114,7 +114,7 @@ func (g GoogleAPI) LoginHandler(c *gin.Context) {
 
 	// get login url
 	link := g.Config.AuthCodeURL(state)
-	c.HTML(http.StatusOK, "auth.tmpl", gin.H{"link": link, "provider": "Google"})
+	c.HTML(http.StatusOK, "auth2.tmpl", gin.H{"link": link, "provider": "Google"})
 }
 
 func (g GoogleAPI) TestHandler(c *gin.Context) {

@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/simple-jwt-auth/api"
+	"github.com/simple-jwt-auth/ginserver"
 	"github.com/simple-jwt-auth/middleware"
 	"github.com/simple-jwt-auth/utils"
 
@@ -151,18 +152,20 @@ func (server *Server) InitializeRoutes() {
 
 	//init route for oauth2 api
 
+	server.Router.Use(sessions.Sessions("goquestsession", store))
 	oauth2_api := api.ProviderOauth2API()
 	oauth2 := server.Router.Group(fmt.Sprintf("/%s", utils.OAUTH2_PREFIX))
-	oauth2.Use(sessions.Sessions("goquestsession", store))
 	{
 		oauth2.GET("/login", oauth2_api.Login)
 		oauth2.POST("/login", oauth2_api.Login)
-		oauth2.GET("/auth", oauth2_api.Authenicate)
-		oauth2.POST("/auth", oauth2_api.Authenicate)
 		oauth2.GET("/authorize", oauth2_api.Authorize)
 		oauth2.POST("/authorize", oauth2_api.Authorize)
-		oauth2.GET("/token", oauth2_api.HandleTokenRequest)
-		oauth2.POST("/token", oauth2_api.HandleTokenRequest)
+		oauth2.GET("/auth", oauth2_api.Authenicate)
+		oauth2.POST("/auth", oauth2_api.Authenicate)
+		//oauth2.GET("/token", oauth2_api.HandleTokenRequest)
+		oauth2.GET("/token", ginserver.HandleAuthorizeRequest)
+		//oauth2.POST("/token", oauth2_api.HandleTokenRequest)
+		oauth2.POST("/token", ginserver.HandleTokenRequest)
 		oauth2.GET("/test", oauth2_api.Test)
 	}
 }

@@ -138,7 +138,7 @@ func (g GithubAPI) LoginHandler(c *gin.Context) {
 
 	// get login url
 	link := g.Config.AuthCodeURL(state, oauth2.AccessTypeOnline)
-	c.HTML(http.StatusOK, "auth.tmpl", gin.H{"link": link})
+	c.HTML(http.StatusOK, "auth2.tmpl", gin.H{"link": link})
 }
 
 func (g GithubAPI) TestHandler(c *gin.Context) {
