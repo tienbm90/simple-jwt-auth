@@ -7,6 +7,7 @@ import (
 	"github.com/simple-jwt-auth/api"
 	"github.com/simple-jwt-auth/ginserver"
 	"github.com/simple-jwt-auth/middleware"
+	"github.com/simple-jwt-auth/models"
 	"github.com/simple-jwt-auth/utils"
 
 	//simple_models "github.com/simple-jwt-auth/models"
@@ -23,7 +24,8 @@ func (server *Server) InitializeRoutes() {
 	//casbinService := api.NewCasbinService(server.Enforcer)
 	//
 	////
-	//userRepos := simple_models.ProvideUserRepository(server.DB)
+	userRepos := models.ProvideUserRepository(server.DB)
+	oauthClientRepo := models.OauthClientRepository{DB: server.DB}
 
 	token, err := middleware.RandToken(64)
 	if err != nil {
@@ -153,7 +155,8 @@ func (server *Server) InitializeRoutes() {
 	//init route for oauth2 api
 
 	server.Router.Use(sessions.Sessions("goquestsession", store))
-	oauth2_api := api.ProviderOauth2API()
+	//oauth2_api := api.ProviderOauth2API()
+	oauth2_api := api.InitOauth2API(&oauthClientRepo, &userRepos)
 	oauth2 := server.Router.Group(fmt.Sprintf("/%s", utils.OAUTH2_PREFIX))
 	{
 		oauth2.GET("/login", oauth2_api.Login)

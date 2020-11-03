@@ -53,7 +53,7 @@ var users = []models.User{
 
 func Load(db *gorm.DB) {
 	dbExist := db.Migrator().HasTable(&models.User{})
-	log.Printf("DB existied: %t",dbExist)
+	log.Printf("DB existied: %t", dbExist)
 	if !dbExist {
 		err := db.Debug().Create(&models.User{}).Error
 		if err != nil {
@@ -68,7 +68,6 @@ func Load(db *gorm.DB) {
 	//delete old data
 	//db.Debug().Model(&models.User{}).Delete(&models.User{}).Where("1 = 1")
 
-
 	// sync new data
 	//for _, v := range users {
 	//	err := db.Debug().Model(&models.User{}).Create(&v).Error
@@ -77,6 +76,37 @@ func Load(db *gorm.DB) {
 	//	}
 	//
 	//}
+
+	clients := []models.OauthClient{
+		{
+			Model:        gorm.Model{},
+			ClientID:     "22222",
+			ClientSecret: "22222222",
+			Domain:       "http://localhost:8085",
+			RedirectURL:  "http://localhost:8085/oauth/google/auth",
+			UserID:       "",
+		}, {
+			Model:        gorm.Model{},
+			ClientID:     "222223",
+			ClientSecret: "222222223",
+			Domain:       "http://localhost:8085",
+			RedirectURL:  "http://localhost:8085/oauth/google/auth",
+			UserID:       "",
+		}, {
+		Model:        gorm.Model{},
+		ClientID:     "222223",
+		ClientSecret: "222222223",
+		Domain:       "http://localhost:8085",
+		RedirectURL:  "http://localhost:8085/oauth/google/auth",
+		UserID:       "",
+	},
+	}
+	for _, v := range clients {
+		err := db.Debug().Model(&models.OauthClient{}).Create(&v).Error
+		if err != nil {
+			log.Fatalf("cannot seed users table: %v", err)
+		}
+	}
 
 	//create default rbac rule
 	enforcer := auth.NewCasbinEnforcerFromDB(db)

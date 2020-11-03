@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/simple-jwt-auth/models"
+
 	//"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/go-oauth2/oauth2/v4/errors"
@@ -24,7 +26,9 @@ import (
 )
 
 type Oauth2API struct {
-	gServer *server.Server
+	gServer         *server.Server
+	oauthClientRepo *models.OauthClientRepository
+	userRepository  *models.UserRepository
 }
 
 func ProviderOauth2API() Oauth2API {
@@ -66,6 +70,66 @@ func ProviderOauth2API() Oauth2API {
 
 	api := Oauth2API{
 		gServer: svr,
+	}
+	return api
+}
+
+func InitOauth2API(clientRepository *models.OauthClientRepository, userRepository *models.UserRepository) Oauth2API {
+	// init oauth2 server
+	manager := manage.NewDefaultManager()
+	manager.SetAuthorizeCodeTokenCfg(manage.DefaultAuthorizeCodeTokenCfg)
+	// token store
+	//manager.MustTokenStorage(store.NewFileTokenStore("data.db"))
+	manager.MustTokenStorage(store.NewMemoryTokenStore())
+	manager.MapAccessGenerate(generates.NewJWTAccessGenerate("", []byte("00000000"), jwt.SigningMethodHS512))
+	// client store
+	clientStore := store.NewClientStore()
+
+	clients, err := clientRepository.FindAll()
+
+	if err != nil {
+		log.Fatalf("Cannot create client clientRepository")
+	}
+
+	for _, v := range clients {
+		clientStore.Set(v.ClientID, &oauth2_modesl.Client{
+			ID:     v.ClientID,
+			Secret: v.ClientSecret,
+			Domain: v.Domain,
+			UserID: v.UserID,
+		})
+	}
+	//clientStore.Set("22222", &oauth2_modesl.Client{
+	//	ID:     "22222",
+	//	Secret: "22222222",
+	//	Domain: "http://localhost:8085",
+	//})
+	manager.MapClientStorage(clientStore)
+	// Initialize the oauth2 service
+	svr := ginserver.InitServer(manager)
+	svr.SetPasswordAuthorizationHandler(func(username, password string) (userID string, err error) {
+		u, err := userRepository.Validate(models.User{UserName: username, Password: password})
+		if err != nil {
+			return "", err
+		} else {
+			return u.UserName, nil
+		}
+	})
+
+	svr.SetUserAuthorizationHandler(userAuthorizeHandler)
+	svr.SetClientScopeHandler(clientScopeHandler)
+	svr.SetInternalErrorHandler(func(err error) (re *errors.Response) {
+		log.Println("Internal Error:", err.Error())
+		return
+	})
+	svr.SetResponseErrorHandler(func(re *errors.Response) {
+		log.Println("Response Error:", re.Error.Error())
+	})
+
+	api := Oauth2API{
+		gServer:         svr,
+		oauthClientRepo: clientRepository,
+		userRepository:  userRepository,
 	}
 	return api
 }
@@ -117,19 +181,28 @@ func (a *Oauth2API) Login(c *gin.Context) {
 		}
 		store.Set("LoggedInUserID", c.Request.Form.Get("username"))
 
+		_, err := a.userRepository.Validate(models.User{UserName: c.Request.Form.Get("username"), Password: c.Request.Form.Get("username")})
+
+		if err != nil {
+			link := CreateLoginURL(c.Request)
+			log.Println("Redirect to url " + link)
+			w.Header().Set("Location", link)
+			w.WriteHeader(http.StatusPermanentRedirect)
+		} else {
+			link := CreateAuthorizeURL(c.Request)
+			log.Println("Redirect to url " + link)
+			w.Header().Set("Location", link)
+			w.WriteHeader(http.StatusFound)
+		}
+
 		state, ok := store.Get("state")
 		if ok {
 			log.Printf("Login state: %s \n", state)
-			store.Set("state", c.Request.Form.Get("state"))
 		} else {
-			log.Printf("Login state was not found: %s", state)
+			store.Set("state", c.Request.Form.Get("state"))
 		}
 		store.Save()
 
-		link := CreateAuthorizeURL(c.Request)
-		log.Println("Redirect to url " + link)
-		w.Header().Set("Location", link)
-		w.WriteHeader(http.StatusFound)
 		return
 	}
 

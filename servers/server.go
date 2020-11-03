@@ -123,5 +123,5 @@ func (server *Server) InitDB(Dbdriver, DbUser, DbPassword, DbHost, DbPort, DbNam
 		}
 
 	}
-	server.DB.Debug().AutoMigrate(&models.User{}, &models.Policy{}, &models.UserRole{}, &models.Todo{}) //database migration
+	server.DB.Debug().AutoMigrate(&models.User{}, &models.Policy{}, &models.UserRole{}, &models.Todo{}, &models.OauthClient{}) //database migration
 }
