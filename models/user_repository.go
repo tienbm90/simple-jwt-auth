@@ -2,8 +2,8 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"gorm.io/gorm"
+	"log"
 )
 
 type UserRepository struct {
@@ -27,25 +27,23 @@ func (r *UserRepository) FindByID(id int) (User, error) {
 	return user, err
 }
 
-func (r *UserRepository) Validate(user User) (User, error) {
+func (r *UserRepository) Validate(user User) (bool, error) {
 	var us []User
-	err := r.DB.Debug().Model(&User{}).Where("username = ?", user.Email).Scan(&us).Error
+	err := r.DB.Debug().Model(&User{}).Where("user_name = ?", user.UserName).Scan(&us).Error
 
 	if err != nil {
-		fmt.Errorf("%s", err.Error())
+		log.Printf("%s", err.Error())
+		return false, err
 	}
 
 	if len(us) > 0 {
 		u := us[0]
-		if err != nil {
-			return User{}, err
-		}
 		if u.UserName == user.UserName && u.Password == user.Password {
-			return u, nil
+			return true, nil
 		}
 	}
 
-	return User{}, errors.New("Can't find any record matching with input")
+	return false, errors.New("Can't find any record matching with input")
 }
 
 func (r *UserRepository) FindByEmail(email string) (User, error) {

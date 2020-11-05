@@ -64,6 +64,15 @@ func enforce(sub string, obj string, act string, enforcer *casbin.Enforcer) (boo
 // AuthorizeRequest is used to authorize a request for a certain end-point group.
 func AuthorizeOpenIdRequest() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		err := auth.TokenValid(c.Request)
+
+		log.Printf("Authorization token: %s \n", c.Request.Header.Get("Authorization"))
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, "Token invalid. user hasn't logged in yet")
+			c.Abort()
+			return
+		}
+
 		session := sessions.Default(c)
 		v := session.Get("user-id")
 		if v == nil {

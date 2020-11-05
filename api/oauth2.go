@@ -108,11 +108,11 @@ func InitOauth2API(clientRepository *models.OauthClientRepository, userRepositor
 	// Initialize the oauth2 service
 	svr := ginserver.InitServer(manager)
 	svr.SetPasswordAuthorizationHandler(func(username, password string) (userID string, err error) {
-		u, err := userRepository.Validate(models.User{UserName: username, Password: password})
+		_, err = userRepository.Validate(models.User{UserName: username, Password: password})
 		if err != nil {
 			return "", err
 		} else {
-			return u.UserName, nil
+			return username, nil
 		}
 	})
 
@@ -154,61 +154,104 @@ func (a *Oauth2API) Test(c *gin.Context) {
 	e.Encode(data)
 }
 
-func (a *Oauth2API) Login(c *gin.Context) {
+func (a *Oauth2API) ShowLoginPage(c *gin.Context) {
 	w := c.Writer
 	store, err := session.Start(c.Request.Context(), w, c.Request)
-
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	link := CreateLoginURL(c.Request)
 	if c.Request.Form == nil {
 		err := c.Request.ParseForm()
 		if err != nil {
 			log.Fatal("error in parse form")
 		} else {
-			store.Set("state", c.Request.Form.Get("state"))
+
 		}
+	}
+	state := c.Request.Form.Get("state")
+
+	if state != "" {
+		store.Set("state", c.Request.Form.Get("state"))
+	} else {
+		log.Println("Cant find login state!!!")
+	}
+
+	store.Save()
+
+	c.HTML(http.StatusOK, "login.tmpl", gin.H{"link": link})
+}
+
+func (a *Oauth2API) HandleLogin(c *gin.Context) {
+	start := time.Now()
+	store, err := session.Start(c.Request.Context(), c.Writer, c.Request)
+
+	if err != nil {
+		log.Fatal("Can't init session store")
+		return
 	}
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c.HTML(http.StatusInternalServerError, "login.tmpl", gin.H{
+			"ErrorTitle":   "Login Failed",
+			"ErrorMessage": "Invalid credentials provided"})
 		return
 	}
 
-	if c.Request.Method == "POST" {
-		if c.Request.Form == nil {
-			if err := c.Request.ParseForm(); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-		}
-		store.Set("LoggedInUserID", c.Request.Form.Get("username"))
+	state, ok := store.Get("state")
+	if ok && state != "" {
+		log.Printf("LOGIN state: %s \n", state)
+	} else {
+		log.Printf("LOGIN  state not found: %s \n", state)
+		store.Set("state", c.Request.Form.Get("state"))
+	}
 
-		_, err := a.userRepository.Validate(models.User{UserName: c.Request.Form.Get("username"), Password: c.Request.Form.Get("username")})
+	if c.Request.Method == "GET" {
+		link := CreateLoginURL(c.Request)
+		c.HTML(http.StatusOK, "login.tmpl", gin.H{"link": link})
+		return
+	}
 
+
+
+	//store state
+	if c.Request.Form == nil {
+		err := c.Request.ParseForm()
 		if err != nil {
-			link := CreateLoginURL(c.Request)
-			log.Println("Redirect to url " + link)
-			w.Header().Set("Location", link)
-			w.WriteHeader(http.StatusPermanentRedirect)
-		} else {
-			link := CreateAuthorizeURL(c.Request)
-			log.Println("Redirect to url " + link)
-			w.Header().Set("Location", link)
-			w.WriteHeader(http.StatusFound)
+			log.Fatal("error in parse form")
 		}
-
-		state, ok := store.Get("state")
-		if ok {
-			log.Printf("Login state: %s \n", state)
-		} else {
-			store.Set("state", c.Request.Form.Get("state"))
-		}
-		store.Save()
-
-		return
 	}
 
-	link := CreateLoginURL(c.Request)
+	username := c.PostForm("username")
+	password := c.PostForm("password")
+	ok, err = a.userRepository.Validate(models.User{UserName: username, Password: password})
 
-	c.HTML(http.StatusFound, "login.tmpl", gin.H{"link": link})
+	var link string
+	if err == nil && ok {
+		link = CreateAuthorizeURL(c.Request)
+		log.Println("Redirect to url " + link)
+		store.Set("LoggedInUserID", username)
+		c.Redirect(http.StatusFound, link)
+
+	} else {
+		link = CreateLoginURL(c.Request)
+		log.Println("Redirect to url " + link)
+
+		c.HTML(http.StatusSeeOther, "login.tmpl", gin.H{
+			"ErrorTitle":   "Login Failed",
+			"Location":     link,
+			"ErrorMessage": "Invalid credentials provided"})
+	}
+
+	//link := CreateLoginURL(c.Request)
+	//
+	//c.HTML(http.StatusFound, "login.tmpl", gin.H{"link": link})
+
+	elapsed := time.Since(start)
+	log.Printf("Binomial took %s", elapsed)
+	c.Abort()
+	//return
 }
 
 func (a *Oauth2API) Authenicate(c *gin.Context) {
@@ -251,6 +294,7 @@ func (a *Oauth2API) Authenicate(c *gin.Context) {
 }
 
 func (a *Oauth2API) Authorize(c *gin.Context) {
+	start := time.Now()
 	w := c.Writer
 	store, err := session.Start(c.Request.Context(), w, c.Request)
 	if err != nil {
@@ -272,12 +316,15 @@ func (a *Oauth2API) Authorize(c *gin.Context) {
 	var form url.Values
 	form = c.Request.Form
 	log.Printf("Form: %s", form)
-	store.Delete("ReturnUri")
+	//store.Delete("ReturnUri")
 	store.Save()
 
-	err = a.gServer.HandleAuthorizeRequest(w, c.Request)
-	//a.HandleAuthorizeRequest(c)
+	elapsed := time.Since(start)
+	log.Printf("Binomial took %s", elapsed)
 
+	err = a.gServer.HandleAuthorizeRequest(w, c.Request)
+
+	//a.HandleAuthorizeRequest(c)
 	if err != nil {
 		fmt.Printf("Verify: %s", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -289,7 +336,6 @@ func userAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userID string
 	if err != nil {
 		return
 	}
-
 	log.Printf("Request URI: %s", r.RequestURI)
 	uid, ok := store.Get("LoggedInUserID")
 	if !ok {

@@ -33,7 +33,7 @@ func (api JwtApi) JwtLogin(c *gin.Context) {
 		return
 	}
 	log.Println(user)
-	ts, err := tokenManager.CreateToken(strconv.FormatUint(uint64(user.ID), 10), user.UserName)
+	ts, err := tokenManager.CreateToken(strconv.FormatUint(uint64(u.ID), 10), u.UserName)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, err.Error())
 		return

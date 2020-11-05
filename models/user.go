@@ -21,6 +21,11 @@ type User struct {
 	Gender         string `json:"gender"`
 }
 
+type UserDTO struct {
+	UserName       string `json:"username"`
+	Password       string `json:"password"`
+}
+
 // SetPassword sets a new password stored as hash.
 func (m *User) SetPassword(password string) error {
 
