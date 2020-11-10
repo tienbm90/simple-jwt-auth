@@ -80,26 +80,11 @@ func Load(db *gorm.DB) {
 	clients := []models.OauthClient{
 		{
 			Model:        gorm.Model{},
-			ClientID:     "22222",
-			ClientSecret: "22222222",
-			Domain:       "http://localhost:8085",
-			RedirectURL:  "http://localhost:8085/oauth/google/auth",
-			UserID:       "",
-		}, {
-			Model:        gorm.Model{},
-			ClientID:     "222223",
-			ClientSecret: "222222223",
-			Domain:       "http://localhost:8085",
-			RedirectURL:  "http://localhost:8085/oauth/google/auth",
-			UserID:       "",
-		}, {
-		Model:        gorm.Model{},
-		ClientID:     "222223",
-		ClientSecret: "222222223",
-		Domain:       "http://localhost:8085",
-		RedirectURL:  "http://localhost:8085/oauth/google/auth",
-		UserID:       "",
-	},
+			ClientID:     "4444444",
+				ClientSecret: "44444444444",
+			Domain:       "http://127.0.0.1:8085/",
+			RedirectURL:  "http://127.0.0.1:8085/oauth/aic/auth",
+		},
 	}
 	for _, v := range clients {
 		err := db.Debug().Model(&models.OauthClient{}).Create(&v).Error

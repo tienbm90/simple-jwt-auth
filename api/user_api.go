@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/simple-jwt-auth/models"
 	"log"
@@ -30,23 +29,29 @@ func (a *UserAPI) FindAll(c *gin.Context) {
 }
 
 func (a *UserAPI) UserInfo(c *gin.Context) {
-	session := sessions.Default(c)
-	v := session.Get("user-id")
-
-	if v == nil {
-		c.HTML(http.StatusUnauthorized, "error.tmpl", gin.H{"message": "Please login."})
-		c.Abort()
-	}
+	//session := sessions.Default(c)
+	//v := session.Get("user-id")
+	//
+	//if v == nil {
+	//	c.HTML(http.StatusUnauthorized, "error.tmpl", gin.H{"message": "Please login."})
+	//	c.Abort()
+	//	return
+	//}
+	//init fake data
+	v := "1"
 
 	id, _ := strconv.Atoi(fmt.Sprint(v))
 
-	user, err := a.UserService.FindByID(int(id))
+	user, err := a.UserService.FindByID(id)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 		c.Status(http.StatusBadRequest)
+		c.Abort()
 		return
+	} else {
+		//c.JSON(http.StatusOK, gin.H{"user": ToUserDTO(user)})
+		c.JSON(http.StatusOK, ToUserDTO(user))
 	}
-	c.JSON(http.StatusOK, gin.H{"user": ToUserDTO(user)})
 }
 
 func (a *UserAPI) FindByID(c *gin.Context) {

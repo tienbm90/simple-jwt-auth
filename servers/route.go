@@ -100,7 +100,7 @@ func (server *Server) InitializeRoutes() {
 
 	//// jwt
 	jwt := server.Router.Group("/jwt")
-	jwt.POST("/jwt/login", jwtApi.JwtLogin)
+	jwt.POST("/login", jwtApi.JwtLogin)
 	jwt.Use(middleware.TokenAuthMiddleware())
 	{
 		jwt.POST("/oauth2/policy", middleware.AuthorizeJwtToken("/jwt/oauth2/policy", "POST", server.Enforcer), casbinService.CreatePolicy)
@@ -164,8 +164,8 @@ func (server *Server) InitializeRoutes() {
 		oauth2.POST("/login", oauth2_api.HandleLogin)
 		oauth2.GET("/authorize", oauth2_api.Authorize)
 		oauth2.POST("/authorize", oauth2_api.Authorize)
-		oauth2.GET("/auth", oauth2_api.Authenicate)
-		oauth2.POST("/auth", oauth2_api.Authenicate)
+		oauth2.GET("/auth", oauth2_api.Authenticate)
+		oauth2.POST("/auth", oauth2_api.Authenticate)
 		//oauth2.GET("/token", oauth2_api.HandleTokenRequest)
 		oauth2.GET("/token", ginserver.HandleAuthorizeRequest)
 		//oauth2.POST("/token", oauth2_api.HandleTokenRequest)
@@ -178,4 +178,5 @@ func (server *Server) InitializeRoutes() {
 		oauth2.POST("/userinfo", userApi.UserInfo)
 		oauth2.GET("/userinfo", userApi.UserInfo)
 	}
+	server.Router.GET("/userinfo", userApi.UserInfo)
 }

@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/simple-jwt-auth/models"
-
-	//"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/go-oauth2/oauth2/v4/errors"
 	"github.com/go-oauth2/oauth2/v4/generates"
@@ -17,10 +14,12 @@ import (
 	"github.com/go-oauth2/oauth2/v4/store"
 	"github.com/go-session/session"
 	"github.com/simple-jwt-auth/ginserver"
+	"github.com/simple-jwt-auth/models"
 	"github.com/simple-jwt-auth/utils"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -31,48 +30,48 @@ type Oauth2API struct {
 	userRepository  *models.UserRepository
 }
 
-func ProviderOauth2API() Oauth2API {
-	// init oauth2 server
-	manager := manage.NewDefaultManager()
-	manager.SetAuthorizeCodeTokenCfg(manage.DefaultAuthorizeCodeTokenCfg)
-	// token store
-	//manager.MustTokenStorage(store.NewFileTokenStore("data.db"))
-	manager.MustTokenStorage(store.NewMemoryTokenStore())
-	manager.MapAccessGenerate(generates.NewJWTAccessGenerate("", []byte("00000000"), jwt.SigningMethodHS512))
-	// client store
-	clientStore := store.NewClientStore()
-	clientStore.Set("22222", &oauth2_modesl.Client{
-		ID:     "22222",
-		Secret: "22222222",
-		Domain: "http://localhost:8085",
-	})
-	manager.MapClientStorage(clientStore)
-	// Initialize the oauth2 service
-	svr := ginserver.InitServer(manager)
-	svr.SetPasswordAuthorizationHandler(func(username, password string) (userID string, err error) {
-		if username == "test" && password == "test" {
-			userID = "test"
-		} else {
-			userID = "demo"
-		}
-		return
-	})
-
-	svr.SetUserAuthorizationHandler(userAuthorizeHandler)
-	svr.SetClientScopeHandler(clientScopeHandler)
-	svr.SetInternalErrorHandler(func(err error) (re *errors.Response) {
-		log.Println("Internal Error:", err.Error())
-		return
-	})
-	svr.SetResponseErrorHandler(func(re *errors.Response) {
-		log.Println("Response Error:", re.Error.Error())
-	})
-
-	api := Oauth2API{
-		gServer: svr,
-	}
-	return api
-}
+//func ProviderOauth2API() Oauth2API {
+//	// init oauth2 server
+//	manager := manage.NewDefaultManager()
+//	manager.SetAuthorizeCodeTokenCfg(manage.DefaultAuthorizeCodeTokenCfg)
+//	// token store
+//	//manager.MustTokenStorage(store.NewFileTokenStore("data.db"))
+//	manager.MustTokenStorage(store.NewMemoryTokenStore())
+//	manager.MapAccessGenerate(generates.NewJWTAccessGenerate("", []byte("00000000"), jwt.SigningMethodHS512))
+//	// client store
+//	clientStore := store.NewClientStore()
+//	clientStore.Set("22222", &oauth2_modesl.Client{
+//		ID:     "22222",
+//		Secret: "22222222",
+//		Domain: "http://localhost:8085",
+//	})
+//	manager.MapClientStorage(clientStore)
+//	// Initialize the oauth2 service
+//	svr := ginserver.InitServer(manager)
+//	svr.SetPasswordAuthorizationHandler(func(username, password string) (userID string, err error) {
+//		if username == "test" && password == "test" {
+//			userID = "test"
+//		} else {
+//			userID = "demo"
+//		}
+//		return
+//	})
+//
+//	svr.SetUserAuthorizationHandler(userAuthorizeHandler)
+//	svr.SetClientScopeHandler(clientScopeHandler)
+//	svr.SetInternalErrorHandler(func(err error) (re *errors.Response) {
+//		log.Println("Internal Error:", err.Error())
+//		return
+//	})
+//	svr.SetResponseErrorHandler(func(re *errors.Response) {
+//		log.Println("Response Error:", re.Error.Error())
+//	})
+//
+//	api := Oauth2API{
+//		gServer: svr,
+//	}
+//	return api
+//}
 
 func InitOauth2API(clientRepository *models.OauthClientRepository, userRepository *models.UserRepository) Oauth2API {
 	// init oauth2 server
@@ -81,7 +80,9 @@ func InitOauth2API(clientRepository *models.OauthClientRepository, userRepositor
 	// token store
 	//manager.MustTokenStorage(store.NewFileTokenStore("data.db"))
 	manager.MustTokenStorage(store.NewMemoryTokenStore())
-	manager.MapAccessGenerate(generates.NewJWTAccessGenerate("", []byte("00000000"), jwt.SigningMethodHS512))
+	//manager.MapAccessGenerate(generates.NewJWTAccessGenerate("", []byte("00000000"), jwt.SigningMethodHS512))
+	manager.MapAccessGenerate(generates.NewJWTAccessGenerate("", []byte(os.Getenv("ACCESS_SECRET")), jwt.SigningMethodHS512))
+
 	// client store
 	clientStore := store.NewClientStore()
 
@@ -99,11 +100,7 @@ func InitOauth2API(clientRepository *models.OauthClientRepository, userRepositor
 			UserID: v.UserID,
 		})
 	}
-	//clientStore.Set("22222", &oauth2_modesl.Client{
-	//	ID:     "22222",
-	//	Secret: "22222222",
-	//	Domain: "http://localhost:8085",
-	//})
+
 	manager.MapClientStorage(clientStore)
 	// Initialize the oauth2 service
 	svr := ginserver.InitServer(manager)
@@ -118,6 +115,7 @@ func InitOauth2API(clientRepository *models.OauthClientRepository, userRepositor
 
 	svr.SetUserAuthorizationHandler(userAuthorizeHandler)
 	svr.SetClientScopeHandler(clientScopeHandler)
+
 	svr.SetInternalErrorHandler(func(err error) (re *errors.Response) {
 		log.Println("Internal Error:", err.Error())
 		return
@@ -213,8 +211,6 @@ func (a *Oauth2API) HandleLogin(c *gin.Context) {
 		return
 	}
 
-
-
 	//store state
 	if c.Request.Form == nil {
 		err := c.Request.ParseForm()
@@ -231,7 +227,7 @@ func (a *Oauth2API) HandleLogin(c *gin.Context) {
 	if err == nil && ok {
 		link = CreateAuthorizeURL(c.Request)
 		log.Println("Redirect to url " + link)
-		store.Set("LoggedInUserID", username)
+		store.Set("user-id", username)
 		c.Redirect(http.StatusFound, link)
 
 	} else {
@@ -254,7 +250,7 @@ func (a *Oauth2API) HandleLogin(c *gin.Context) {
 	//return
 }
 
-func (a *Oauth2API) Authenicate(c *gin.Context) {
+func (a *Oauth2API) Authenticate(c *gin.Context) {
 	store, err := session.Start(c.Request.Context(), c.Writer, c.Request)
 	if err != nil {
 		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
@@ -270,7 +266,7 @@ func (a *Oauth2API) Authenicate(c *gin.Context) {
 
 	//check if user is logged in
 
-	if _, ok := store.Get("LoggedInUserID"); !ok {
+	if _, ok := store.Get("user-id"); !ok {
 		log.Println("User doesn't log in")
 
 		link := CreateLoginURL(c.Request)
@@ -337,7 +333,7 @@ func userAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userID string
 		return
 	}
 	log.Printf("Request URI: %s", r.RequestURI)
-	uid, ok := store.Get("LoggedInUserID")
+	uid, ok := store.Get("user-id")
 	if !ok {
 		if r.Form == nil {
 			r.ParseForm()
@@ -346,7 +342,6 @@ func userAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userID string
 		store.Save()
 
 		link := CreateLoginURL(r)
-		//link := "/oauth2/login"
 		log.Println("User is not loggin ")
 
 		w.Header().Set("Location", link)
@@ -357,13 +352,12 @@ func userAuthorizeHandler(w http.ResponseWriter, r *http.Request) (userID string
 		log.Printf("User: %s \n", uid)
 	}
 	userID = uid.(string)
-	//store.Delete("LoggedInUserID")
+	//store.Delete("user-id")
 	store.Save()
 	return
 }
 
 func clientScopeHandler(clientID, scope string) (allowed bool, err error) {
-
 	if scope != "all" {
 		return false, errors.ErrInvalidGrant
 	}

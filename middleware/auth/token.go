@@ -36,7 +36,7 @@ func (t *JwtTokenManager) CreateToken(userId, userName string) (*TokenDetails, e
 	atClaims["user_id"] = userId
 	atClaims["user_name"] = userName
 	atClaims["exp"] = td.AtExpires
-	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+	at := jwt.NewWithClaims(jwt.SigningMethodHS512, atClaims)
 	td.AccessToken, err = at.SignedString([]byte(os.Getenv("ACCESS_SECRET")))
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (t *JwtTokenManager) CreateToken(userId, userName string) (*TokenDetails, e
 	rtClaims["user_id"] = userId
 	rtClaims["user_name"] = userName
 	rtClaims["exp"] = td.RtExpires
-	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
+	rt := jwt.NewWithClaims(jwt.SigningMethodHS512, rtClaims)
 
 	td.RefreshToken, err = rt.SignedString([]byte(os.Getenv("REFRESH_SECRET")))
 	if err != nil {

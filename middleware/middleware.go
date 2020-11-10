@@ -5,8 +5,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/casbin/casbin/v2"
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/go-session/session"
 	"github.com/simple-jwt-auth/middleware/auth"
 	"log"
 	"net/http"
@@ -73,9 +73,11 @@ func AuthorizeOpenIdRequest() gin.HandlerFunc {
 			return
 		}
 
-		session := sessions.Default(c)
-		v := session.Get("user-id")
-		if v == nil {
+		store, err := session.Start(c.Request.Context(), c.Writer, c.Request)
+
+		//session := sessions.Default(c)
+		v, ok := store.Get("user-id")
+		if !ok || v == nil {
 			c.HTML(http.StatusUnauthorized, "error.tmpl", gin.H{"message": "Please login."})
 			c.Abort()
 		}
