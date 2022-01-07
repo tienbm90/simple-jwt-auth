@@ -100,7 +100,7 @@ func VerifyToken(r *http.Request) (*jwt.Token, error) {
 	return token, nil
 }
 
-//get the token from the request body
+//get the token from the request header
 func ExtractToken(r *http.Request) string {
 	bearToken := r.Header.Get("Authorization")
 	strArr := strings.Split(bearToken, " ")
